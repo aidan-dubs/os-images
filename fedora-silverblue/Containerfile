@@ -13,17 +13,17 @@ ARG BASE="${BASE} podman podman-compose distrobox podlet buildah fuse fuse-libs"
 ## Extra Tools
 ARG BASE="${BASE} zsh neovim ripgrep fd-find fastfetch bat tldr"
 ## Desktop Integrations
-# ARG BASE="${BASE} adw-gtk3-theme nautilus-python-devel ffmpegthumbnailer"
+ARG BASE="${BASE} adw-gtk3-theme nautilus-python-devel ffmpegthumbnailer ddcutil"
 # ARG BASE="${BASE} speech-dispatcher-utils speech-dispatcher"
 # ARG BASE="${BASE} xdg-terminal-exec iio-sensor-proxy waypipe deskflow syncthing"
 # ARG BASE="${BASE} steam gamescope mangohud discord"
 # ## BTRfs
-# ARG BASE="${BASE} btrfs-progs btrfsmaintenance snapper"
+ARG BASE="${BASE} btrfs-progs btrfsmaintenance snapper"
 # ## Networking and Infrastructure tools
 # ARG BASE="${BASE} wireshark tcpdump bind9-next-utils socat libvirt qemu ansible-core"
 # ARG BASE="${BASE} kubernetes-client helm sqlite"
 # ## Git Tools
-# ARG BASE="${BASE} git git-lfs gh glab jq"
+ARG BASE="${BASE} git git-lfs gh glab jq"
 # ## Build and developer toops
 # ARG BASE="${BASE} gcc gcc-c++ make cmake ninja-build clang pkgconf-pkg-config just"
 # ARG BASE="${BASE} openssl-devel zlib-devel libffi-devel sqlite-devel readline-devel"
@@ -52,9 +52,20 @@ ARG COPR_PACKAGES="${COPR_PACKAGES} topgrade"
 
 # packages where there repo is installed manually
 ARG ADD_PACKAGES=""
-# ARG ADD_PACKAGES="${ADD_PACKAGES} code"
+ARG ADD_PACKAGES="${ADD_PACKAGES} code"
 # ARG ADD_PACKAGES="${ADD_PACKAGES} tailscale"
 
+ARG GEXT=""
+ARG GEXT="${GEXT} nightthemeswitcher@romainvigier.fr"
+ARG GEXT="${GEXT} caffeine@patapon.info"
+# ARG GEXT="${GEXT} display-brightness-ddcutil@themightydeity.github.com"
+ARG GEXT="${GEXT} appindicatorsupport@rgcjonas.gmail.com"
+# ARG GEXT="${GEXT} adwaita-colors-home@dpejoh"
+# ARG GEXT="${GEXT} pip-on-top@rafostar.github.com"
+ARG GEXT="${GEXT} legacyschemeautoswitcher@joshimukul29.gmail.com"
+ARG GEXT="${GEXT} blur-my-shell@aunetx"
+ARG GEXT="${GEXT} nowplaying@epogonii.github.io"
+ARG GEXT="${GEXT} places-menu@gnome-shell-extensions.gcampax.github.com"
 
 FROM quay.io/fedora/fedora-silverblue:45 as cleaned
 
@@ -63,6 +74,7 @@ ARG BASE
 ARG COPRS
 ARG COPR_PACKAGES
 ARG ADD_PACKAGES
+ARG GEXT
 
 
 RUN --mount=type=cache,dst=/var/cache/ \
@@ -99,7 +111,8 @@ RUN --mount=type=cache,dst=/var/cache/ \
 RUN mkdir -p /etc/flatpak/remotes.d && \
     curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
 
-RUN flatpak remote-delete fedora
+RUN systemctl disable flatpak-add-fedora-repos.service && \
+    rm -f /usr/lib/systemd/system/flatpak-add-fedora-repos.service
 
 
 
@@ -117,6 +130,7 @@ ARG BASE
 ARG COPRS
 ARG COPR_PACKAGES
 ARG ADD_PACKAGES
+ARG GEXT
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
@@ -125,14 +139,14 @@ RUN --mount=type=cache,dst=/var/cache/ \
 
 RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/htop.desktop
 
-RUN --mount=type=cache,dst=/var/cache/ \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
-    --mount=type=cache,dst=/var/log \
-    dnf5 install --assumeyes \
-        --setopt=keepcache=1 \
-        --setopt=max_parallel_downloads=10 \
-        --setopt=tsflags=nodocs \
-        texlive-scheme-full pandoc
+# RUN --mount=type=cache,dst=/var/cache/ \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     --mount=type=cache,dst=/var/log \
+#     dnf5 install --assumeyes \
+#         --setopt=keepcache=1 \
+#         --setopt=max_parallel_downloads=10 \
+#         --setopt=tsflags=nodocs \
+#         texlive-scheme-full pandoc
 
 # RUN --mount=type=cache,dst=/var/cache/ \
 #     --mount=type=cache,dst=/var/cache/libdnf5 \
@@ -142,6 +156,31 @@ RUN --mount=type=cache,dst=/var/cache/ \
 # RUN curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
 #
 # RUN rpm -Uvh minikube-latest.x86_64.rpm
+
+
+
+# Download the rest from extensions.gnome.org
+RUN set -eux; \
+    SHELL_VER=$(gnome-shell --version | grep -oP '\d+' | head -1); \
+    for UUID in ${GEXT}; do \
+      case "$UUID" in *gcampax*) continue;; esac; \
+      DL=$(curl -fsSL "https://extensions.gnome.org/extension-info/?uuid=${UUID}&shell_version=${SHELL_VER}" \
+           | python3 -c 'import sys,json; print(json.load(sys.stdin)["download_url"])'); \
+      DEST="/usr/share/gnome-shell/extensions/${UUID}"; \
+      mkdir -p "$DEST"; \
+      curl -fsSL "https://extensions.gnome.org${DL}" -o /tmp/ext.zip; \
+      unzip -q -o /tmp/ext.zip -d "$DEST"; \
+      rm /tmp/ext.zip; \
+      chmod -R u=rwX,go=rX /usr/share/gnome-shell/extensions/; \
+      if [ -d "$DEST/schemas" ]; then glib-compile-schemas "$DEST/schemas"; fi; \
+    done
+
+# Enable them by default for all users
+RUN set -eux; \
+    mkdir -p /etc/dconf/db/local.d; \
+    LIST=$(printf "'%s'," ${GEXT} | sed 's/,$//'); \
+    printf "[org/gnome/shell]\nenabled-extensions=[%s]\n" "$LIST" > /etc/dconf/db/local.d/00-extensions; \
+    dconf update
 
 
 ### user gsettings set org.gnome.desktop.interface icon-theme 'MoreWaita'

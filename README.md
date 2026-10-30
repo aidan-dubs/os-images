@@ -1,16 +1,13 @@
 
-
-
 ```
 sudo podman build -t localhost/my-silverblue:latest -f Containerfile .
 ```
 
-
 ```
-sudo image-builder build \                         
+sudo image-builder build \
   --bootc-ref localhost/my-silverblue:latest \
   --bootc-default-fs btrfs \
-  --output-dir /var/lib/libvirt/ \
+  --output-dir /var/lib/libvirt/images/ \
   qcow2
 ```
 
@@ -21,6 +18,6 @@ sudo virt-install --name sb-test --memory 12288 --vcpus 8 \
 ```
 
 ```
-sudo virsh --connect qemu:///system destroy sb-test        
-sudo virsh --connect qemu:///system undefine sb-test --nvram --remove-all-storage
+sudo virsh --connect qemu:///system destroy sb-test
+sudo virsh --connect qemu:///system undefine sb-test --nvram
 ```
