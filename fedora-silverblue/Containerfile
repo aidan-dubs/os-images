@@ -7,7 +7,7 @@ ARG DNF_BASE
 ARG DNF_LATEX
 ARG DNF_FROM_URL
 ARG GNOME_EXTENSIONS
-ARG DNF_ARGS= "--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
+ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
 
 RUN echo -e "max_parallel_downloads=20" >> /etc/dnf/dnf.conf
 

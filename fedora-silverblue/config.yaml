@@ -2,15 +2,11 @@
 dnf:
   remove:
     - toolbox
-    - nano p
-    - tyxis
+    - nano
+    - ptyxis
     - nano-default-editor
     - gnome-tour
-    - gnome-shell-extension-launch-new-instance
-    - gnome-shell-extension-places-menu
-    - gnome-shell-extension-background-logo
-    - gnome-shell-extension-window-list
-    - gnome-shell-extension-apps-menu
+    - 'gnome-shell-extension-*'
   coprs:
     - lilay/topgrade
     - trixieua/morewaita-icon-theme
