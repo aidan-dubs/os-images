@@ -3,7 +3,8 @@ on:
     branches:
       - main
     paths:
-      - '.forgejo/**'
+      - '.forgejo/ci-image/**'
+      - '.forgejo/workflows/build-env.yaml'
 jobs:
   build-env:
     runs-on: runner
@@ -12,5 +13,6 @@ jobs:
       volumes:
         - /home/runner/.local/share/containers:/var/lib/containers
     steps:
+      - run: dnf install -y git nodejs
       - uses: actions/checkout@v7
       - run: buildah build -t ci-buildah:latest -f .forgejo/ci-image/Containerfile .forgejo/ci-image
