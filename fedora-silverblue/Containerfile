@@ -10,8 +10,7 @@ ARG DNF_BASE
 ARG DNF_LATEX
 ARG DNF_FROM_URL
 ARG GNOME_EXTENSIONS
-
-ARG DNF_FLAGS
+ARG DNF_ARGS
 
 RUN echo -e "max_parallel_downloads=20" >> /etc/dnf/dnf.conf
 
