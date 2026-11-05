@@ -1,0 +1,16 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.forgejo'
+jobs:
+  build-env:
+    runs-on: runner
+    container:
+      image: quay.io/containers/buildah:v1.43
+      volumes:
+        - /home/runner/.local/share/containers:/var/lib/containers
+    steps:
+      - uses: actions/checkout@v7
+      - run: buildah build -t ci-buildah:latest -f .forgejo/ci-image/Containerfile .forgejo/ci-image
