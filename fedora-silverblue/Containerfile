@@ -20,7 +20,7 @@ RUN systemctl disable flatpak-add-fedora-repos.service && \
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
-    dnf5 remove $DNF_ARGS "$DNF_REMOVE"
+    dnf5 remove $DNF_ARGS $DNF_REMOVE
 
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/cache/libdnf5 \
