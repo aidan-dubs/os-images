@@ -25,7 +25,7 @@ ARG BASE="${BASE} btrfs-progs btrfsmaintenance snapper"
 # ## Git Tools
 ARG BASE="${BASE} git git-lfs gh glab jq"
 # ## Build and developer toops
-# ARG BASE="${BASE} gcc gcc-c++ make cmake ninja-build clang pkgconf-pkg-config just"
+ARG BASE="${BASE} gcc gcc-c++ make cmake ninja-build clang pkgconf-pkg-config just"
 # ARG BASE="${BASE} openssl-devel zlib-devel libffi-devel sqlite-devel readline-devel"
 # ARG BASE="${BASE} bzip2-devel xz-devel java-latest-openjdk-devel maven gdb valgrind lldb ccache"
 # ARG BASE="${BASE} python3 python3-pip python3-devel pipx uv"
