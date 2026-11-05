@@ -2,5 +2,7 @@ on: [push]
 jobs:
   test:
     runs-on: runner
+    container:
+      image: quay.io/containers/buildah:v1.43
     steps:
-      - run: echo All good!
+      - run: podman build -t localhost/my-silverblue:latest -f Containerfile .
