@@ -64,7 +64,7 @@ dnf:
     - steam
     - gamescope
     - mangohud
-    - discord
+    # - discord
     # # BTRfs
     - btrfs-progs
     - btrfsmaintenance
