@@ -1,2 +1,5 @@
 FROM quay.io/containers/buildah:v1.43
-RUN dnf install -y nodejs git yq && dnf clean all
+RUN dnf install -y nodejs git yq && dnf clean all \
+ && sed -i 's|^mount_program|#mount_program|' /etc/containers/storage.conf
+
+RUN grep -v '^#' /etc/containers/storage.conf | grep -v '^$'

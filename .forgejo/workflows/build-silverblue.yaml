@@ -1,4 +1,10 @@
-on: [push]
+on: 
+  push: 
+    branches:
+      - main
+    paths:
+      - "fedora-silverblue/**"
+      - ".forgejo/workflows/build-silverblue.yaml"
 jobs:
   build:
     runs-on: runner
@@ -19,5 +25,6 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
       - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
-      - run: buildah build --layers --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
+      - run: buildah info --format '{{.store.GraphDriverName}}'
+      - run: buildah build --layers --save-stages --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
       - run: buildah push ${IMAGE}
