@@ -11,10 +11,10 @@ jobs:
       - run: dnf install -y nodejs git
       - uses: actions/checkout@v7
       - run: |
-        REGISTRY="${SERVER_URL#*://}"
-        OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
-        echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
-        echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
+          REGISTRY="${SERVER_URL#*://}"
+          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
+          echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
       - run: buildah build --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
       - run: buildah push ${IMAGE}
