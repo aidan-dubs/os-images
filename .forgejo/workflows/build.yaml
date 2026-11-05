@@ -11,7 +11,7 @@ jobs:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
     steps:
-      - run: dnf install -y nodejs git
+      - run: dnf install -y nodejs git yq
       - uses: actions/checkout@v7
       - run: |
           REGISTRY="${SERVER_URL#*://}"
