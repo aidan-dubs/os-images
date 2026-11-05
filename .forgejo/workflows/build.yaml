@@ -7,4 +7,4 @@ jobs:
     steps:
       - run: dnf install -y nodejs git
       - uses: actions/checkout@v7
-      - run: buildah build -t localhost/my-silverblue:latest -f Containerfile .
+      - run: buildah build -t localhost/my-silverblue:latest -f Containerfile ./fedora-silverblue/
