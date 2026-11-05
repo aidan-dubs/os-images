@@ -6,7 +6,7 @@ dnf:
     - ptyxis
     - nano-default-editor
     - gnome-tour
-    - gnome-shell-extension-*
+    - "gnome-shell-extension-*"
   coprs:
     - lilay/topgrade
     - trixieua/morewaita-icon-theme
