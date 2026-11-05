@@ -1,6 +1,3 @@
-ARG DNF_ARGS= "--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
-
-
 FROM quay.io/fedora/fedora-silverblue:45 as base
 
 ARG DNF_REMOVE
@@ -10,7 +7,7 @@ ARG DNF_BASE
 ARG DNF_LATEX
 ARG DNF_FROM_URL
 ARG GNOME_EXTENSIONS
-ARG DNF_ARGS
+ARG DNF_ARGS= "--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
 
 RUN echo -e "max_parallel_downloads=20" >> /etc/dnf/dnf.conf
 

@@ -1,9 +1,14 @@
 on: [push]
 jobs:
-  test:
+  build-env:
+    runs-on: host        # a label that runs directly on your server (see below)
+    steps:
+      - uses: actions/checkout@v7
+      - run: podman build -t ci-buildah:latest -f .forgejo/ci-image/Containerfile .forgejo/ci-image
+  build:
     runs-on: runner
     container:
-      image: quay.io/containers/buildah:v1.43
+      image: ci-buildah:latest
       volumes:
         - con-cache:/var/lib/containers
         - tmp-cache:/var/tmp
