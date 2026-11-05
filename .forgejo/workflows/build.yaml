@@ -5,4 +5,4 @@ jobs:
     container:
       image: quay.io/containers/buildah:v1.43
     steps:
-      - run: podman build -t localhost/my-silverblue:latest -f Containerfile .
+      - run: buildah build -t localhost/my-silverblue:latest -f Containerfile .
