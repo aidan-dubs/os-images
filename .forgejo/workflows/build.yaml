@@ -5,4 +5,5 @@ jobs:
     container:
       image: quay.io/containers/buildah:v1.43
     steps:
+      - uses: actions/checkout@v7
       - run: buildah build -t localhost/my-silverblue:latest -f Containerfile .
