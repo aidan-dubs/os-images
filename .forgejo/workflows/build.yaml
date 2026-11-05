@@ -6,4 +6,5 @@ jobs:
       image: quay.io/containers/buildah:v1.43
     steps:
       - uses: actions/checkout@v7
+      - run: dnf install nodejs
       - run: buildah build -t localhost/my-silverblue:latest -f Containerfile .
