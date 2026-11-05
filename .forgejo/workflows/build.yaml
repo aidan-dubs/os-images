@@ -1,10 +1,14 @@
 on: [push]
 jobs:
   build-env:
-    runs-on: host        # a label that runs directly on your server (see below)
+    runs-on: runner
+    container:
+      image: quay.io/containers/buildah:v1.43
+      volumes:
+        - /home/runner/.local/share/containers:/var/lib/containers
     steps:
       - uses: actions/checkout@v7
-      - run: podman build -t ci-buildah:latest -f .forgejo/ci-image/Containerfile .forgejo/ci-image
+      - run: buildah build -t ci-buildah:latest -f .forgejo/ci-image/Containerfile .forgejo/ci-image
   build:
     runs-on: runner
     container:
@@ -16,7 +20,6 @@ jobs:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
     steps:
-      - run: dnf install -y nodejs git yq
       - uses: actions/checkout@v7
       - run: |
           REGISTRY="${SERVER_URL#*://}"
