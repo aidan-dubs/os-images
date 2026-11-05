@@ -4,6 +4,9 @@ jobs:
     runs-on: runner
     container:
       image: quay.io/containers/buildah:v1.43
+      volumes:
+        - con-cache:/var/lib/containers
+        - tmp-cache:/var/tmp
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}

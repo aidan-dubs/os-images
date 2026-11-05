@@ -76,6 +76,7 @@ ARG COPR_PACKAGES
 ARG ADD_PACKAGES
 ARG GEXT
 
+RUN echo -e "keepcache=1\nmax_parallel_downloads=10" >> /etc/dnf/dnf.conf
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
@@ -137,6 +138,7 @@ RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/log \
     dnf5 --assumeyes install $BASE $COPR_PACKAGES $ADD_PACKAGES
 
+
 RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/htop.desktop
 
 # RUN --mount=type=cache,dst=/var/cache/ \
@@ -193,46 +195,47 @@ RUN set -eux; \
 
 ### install extensions at /usr/share/gnome-shell/extensions/
 
+RUN sed -i 's/keepcache=1/keepcache=0/' /etc/dnf/dnf.conf
+RUN bootc container lint
 
 #
-FROM base as base-nvidia
-# NVIDIA things
-RUN curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
-
-ARG NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1
-
-
-# openssl req -new -x509 -newkey rsa:2048 -nodes -days 36500 \
-#   -keyout private_key.priv -outform DER -out public_key.der \
-#   -subj "/CN=MyOrg akmods signing key/" \
-#   -addext "basicConstraints=critical,CA:FALSE" \
-#   -addext "keyUsage=digitalSignature" \
-#   -addext "extendedKeyUsage=codeSigning"
-
-# COPY public_key.der /etc/pki/akmods/certs/public_key.der
-
-#RUN --mount=type=secret,id=akmods_key,target=/etc/pki/akmods/private/private_key.priv \
-# modinfo -k "${KVER}" -F signer nvidia | grep -q "MyOrg akmods signing key"; \
-RUN --mount=type=cache,dst=/var/cache/ \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
-    --mount=type=cache,dst=/var/log \
-    set -eux; \
-    KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)"; \
-    dnf5 install -y \
-      "kernel-devel-${KVER}" akmod-nvidia nvtop \
-      nvidia-driver-cuda xorg-x11-drv-nvidia-cuda \
-      nvidia-settings nvidia-vaapi-driver \
-      "nvidia-container-toolkit-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
-      "nvidia-container-toolkit-base-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
-      "libnvidia-container-tools-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
-      "libnvidia-container1-${NVIDIA_CONTAINER_TOOLKIT_VERSION}"; \
-    akmods --force --kernels "${KVER}"; \
-    modinfo -k "${KVER}" nvidia >/dev/null; \
-    dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f \
-      "/usr/lib/modules/${KVER}/initramfs.img"
-
-COPY <<EOF /usr/lib/bootc/kargs.d/00-nvidia.toml
-kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1", "nvidia-drm.fbdev=1"]
-EOF
-
-RUN bootc container lint
+# FROM base as base-nvidia
+# # NVIDIA things
+# RUN curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+#
+# ARG NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1
+#
+#
+# # openssl req -new -x509 -newkey rsa:2048 -nodes -days 36500 \
+# #   -keyout private_key.priv -outform DER -out public_key.der \
+# #   -subj "/CN=MyOrg akmods signing key/" \
+# #   -addext "basicConstraints=critical,CA:FALSE" \
+# #   -addext "keyUsage=digitalSignature" \
+# #   -addext "extendedKeyUsage=codeSigning"
+#
+# # COPY public_key.der /etc/pki/akmods/certs/public_key.der
+#
+# #RUN --mount=type=secret,id=akmods_key,target=/etc/pki/akmods/private/private_key.priv \
+# # modinfo -k "${KVER}" -F signer nvidia | grep -q "MyOrg akmods signing key"; \
+# RUN --mount=type=cache,dst=/var/cache/ \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     --mount=type=cache,dst=/var/log \
+#     set -eux; \
+#     KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)"; \
+#     dnf5 install -y \
+#       "kernel-devel-${KVER}" akmod-nvidia nvtop \
+#       nvidia-driver-cuda xorg-x11-drv-nvidia-cuda \
+#       nvidia-settings nvidia-vaapi-driver \
+#       "nvidia-container-toolkit-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
+#       "nvidia-container-toolkit-base-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
+#       "libnvidia-container-tools-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
+#       "libnvidia-container1-${NVIDIA_CONTAINER_TOOLKIT_VERSION}"; \
+#     akmods --force --kernels "${KVER}"; \
+#     modinfo -k "${KVER}" nvidia >/dev/null; \
+#     dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f \
+#       "/usr/lib/modules/${KVER}/initramfs.img"
+#
+# COPY <<EOF /usr/lib/bootc/kargs.d/00-nvidia.toml
+# kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1", "nvidia-drm.fbdev=1"]
+# EOF
+#
