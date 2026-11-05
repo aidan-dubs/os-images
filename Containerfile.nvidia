@@ -1,0 +1,241 @@
+ARG REMOVING="toolbox nano ptyxis nano-default-editor gnome-tour"
+ARG REMOVING="${REMOVING} gnome-shell-extension-launch-new-instance"
+ARG REMOVING="${REMOVING} gnome-shell-extension-places-menu"
+ARG REMOVING="${REMOVING} gnome-shell-extension-background-logo"
+ARG REMOVING="${REMOVING} gnome-shell-extension-window-list"
+ARG REMOVING="${REMOVING} gnome-shell-extension-apps-menu"
+
+ARG BASE=""
+## Basic CLI Tools
+ARG BASE="${BASE} vim tmux git wget2 curl htop fastfetch screen xz chezmoi rsync rclone vim-enhanced vim-default-editor"
+## Containers
+ARG BASE="${BASE} podman podman-compose distrobox podlet buildah fuse fuse-libs"
+## Extra Tools
+ARG BASE="${BASE} zsh neovim ripgrep fd-find fastfetch bat tldr"
+## Desktop Integrations
+ARG BASE="${BASE} adw-gtk3-theme nautilus-python-devel ffmpegthumbnailer ddcutil"
+# ARG BASE="${BASE} speech-dispatcher-utils speech-dispatcher"
+# ARG BASE="${BASE} xdg-terminal-exec iio-sensor-proxy waypipe deskflow syncthing"
+# ARG BASE="${BASE} steam gamescope mangohud discord"
+# ## BTRfs
+ARG BASE="${BASE} btrfs-progs btrfsmaintenance snapper"
+# ## Networking and Infrastructure tools
+# ARG BASE="${BASE} wireshark tcpdump bind9-next-utils socat libvirt qemu ansible-core"
+# ARG BASE="${BASE} kubernetes-client helm sqlite"
+# ## Git Tools
+ARG BASE="${BASE} git git-lfs gh glab jq"
+# ## Build and developer toops
+ARG BASE="${BASE} gcc gcc-c++ make cmake ninja-build clang pkgconf-pkg-config just"
+# ARG BASE="${BASE} openssl-devel zlib-devel libffi-devel sqlite-devel readline-devel"
+# ARG BASE="${BASE} bzip2-devel xz-devel java-latest-openjdk-devel maven gdb valgrind lldb ccache"
+# ARG BASE="${BASE} python3 python3-pip python3-devel pipx uv"
+# ARG BASE="${BASE} golang rustup nodejs nodejs-npm"
+# ARG BASE="${BASE} php-cli composer ruby ruby-devel rubygem-bundler"
+# ## Scientific and numerical tools
+# ARG BASE="${BASE} octave R-devel libuv-devel texlive-scheme-full"
+#
+ # ARG GROUPS="\
+ #     development-tools \
+ # "
+
+ARG COPRS="\
+lilay/topgrade \
+trixieua/morewaita-icon-theme \
+iucar/rstudio \
+scottames/ghostty \
+"
+ARG COPR_PACKAGES=""
+ARG COPR_PACKAGES="${COPR_PACKAGES} ghostty"
+ARG COPR_PACKAGES="${COPR_PACKAGES} topgrade"
+# ARG COPR_PACKAGES="${COPR_PACKAGES} morewaita-icon-theme"
+# ARG COPR_PACKAGES="${COPR_PACKAGES} rstudio-server"
+
+# packages where there repo is installed manually
+ARG ADD_PACKAGES=""
+ARG ADD_PACKAGES="${ADD_PACKAGES} code"
+# ARG ADD_PACKAGES="${ADD_PACKAGES} tailscale"
+
+ARG GEXT=""
+ARG GEXT="${GEXT} nightthemeswitcher@romainvigier.fr"
+ARG GEXT="${GEXT} caffeine@patapon.info"
+# ARG GEXT="${GEXT} display-brightness-ddcutil@themightydeity.github.com"
+ARG GEXT="${GEXT} appindicatorsupport@rgcjonas.gmail.com"
+# ARG GEXT="${GEXT} adwaita-colors-home@dpejoh"
+# ARG GEXT="${GEXT} pip-on-top@rafostar.github.com"
+ARG GEXT="${GEXT} legacyschemeautoswitcher@joshimukul29.gmail.com"
+ARG GEXT="${GEXT} blur-my-shell@aunetx"
+ARG GEXT="${GEXT} nowplaying@epogonii.github.io"
+ARG GEXT="${GEXT} places-menu@gnome-shell-extensions.gcampax.github.com"
+
+FROM quay.io/fedora/fedora-silverblue:45 as cleaned
+
+ARG REMOVING
+ARG BASE
+ARG COPRS
+ARG COPR_PACKAGES
+ARG ADD_PACKAGES
+ARG GEXT
+
+RUN echo -e "keepcache=1\nmax_parallel_downloads=10" >> /etc/dnf/dnf.conf
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 remove --assumeyes $REMOVING
+
+RUN --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install --assumeyes https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install --assumeyes rpmfusion-\*-appstream-data
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 config-manager --assumeyes setopt fedora-cisco-openh264.enabled=1
+
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    for copr in $COPRS; do \
+        dnf5 -y copr enable "$copr"; \
+    done
+
+
+### Eventually hide things with desktop-file-edit --set-key=Hidden --set-value=true /usr/share/applications/nvtop.desktop
+
+RUN mkdir -p /etc/flatpak/remotes.d && \
+    curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
+
+RUN systemctl disable flatpak-add-fedora-repos.service && \
+    rm -f /usr/lib/systemd/system/flatpak-add-fedora-repos.service
+
+
+
+RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 --assumeyes config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+
+FROM cleaned as base
+
+ARG REMOVING
+ARG BASE
+ARG COPRS
+ARG COPR_PACKAGES
+ARG ADD_PACKAGES
+ARG GEXT
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 --assumeyes install $BASE $COPR_PACKAGES $ADD_PACKAGES
+
+
+RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/htop.desktop
+
+# RUN --mount=type=cache,dst=/var/cache/ \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     --mount=type=cache,dst=/var/log \
+#     dnf5 install --assumeyes \
+#         --setopt=keepcache=1 \
+#         --setopt=max_parallel_downloads=10 \
+#         --setopt=tsflags=nodocs \
+#         texlive-scheme-full pandoc
+
+# RUN --mount=type=cache,dst=/var/cache/ \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     --mount=type=cache,dst=/var/log \
+#     dnf5 group install $GROUPS
+
+# RUN curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm
+#
+# RUN rpm -Uvh minikube-latest.x86_64.rpm
+
+
+
+# Download the rest from extensions.gnome.org
+RUN set -eux; \
+    SHELL_VER=$(gnome-shell --version | grep -oP '\d+' | head -1); \
+    for UUID in ${GEXT}; do \
+      case "$UUID" in *gcampax*) continue;; esac; \
+      DL=$(curl -fsSL "https://extensions.gnome.org/extension-info/?uuid=${UUID}&shell_version=${SHELL_VER}" \
+           | python3 -c 'import sys,json; print(json.load(sys.stdin)["download_url"])'); \
+      DEST="/usr/share/gnome-shell/extensions/${UUID}"; \
+      mkdir -p "$DEST"; \
+      curl -fsSL "https://extensions.gnome.org${DL}" -o /tmp/ext.zip; \
+      unzip -q -o /tmp/ext.zip -d "$DEST"; \
+      rm /tmp/ext.zip; \
+      chmod -R u=rwX,go=rX /usr/share/gnome-shell/extensions/; \
+      if [ -d "$DEST/schemas" ]; then glib-compile-schemas "$DEST/schemas"; fi; \
+    done
+
+# Enable them by default for all users
+RUN set -eux; \
+    mkdir -p /etc/dconf/db/local.d; \
+    LIST=$(printf "'%s'," ${GEXT} | sed 's/,$//'); \
+    printf "[org/gnome/shell]\nenabled-extensions=[%s]\n" "$LIST" > /etc/dconf/db/local.d/00-extensions; \
+    dconf update
+
+
+### user gsettings set org.gnome.desktop.interface icon-theme 'MoreWaita'
+
+
+### systemctl --user enable --now syncthing.service
+
+###     sudo systemctl enable --now tailscaled
+###     sudo tailscale set --operator=$USER
+
+### install extensions at /usr/share/gnome-shell/extensions/
+
+RUN sed -i 's/keepcache=1/keepcache=0/' /etc/dnf/dnf.conf
+RUN bootc container lint
+
+
+ FROM base as base-nvidia
+ # NVIDIA things
+ RUN curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+
+ ARG NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1
+
+
+ # openssl req -new -x509 -newkey rsa:2048 -nodes -days 36500 \
+ #   -keyout private_key.priv -outform DER -out public_key.der \
+ #   -subj "/CN=MyOrg akmods signing key/" \
+ #   -addext "basicConstraints=critical,CA:FALSE" \
+ #   -addext "keyUsage=digitalSignature" \
+ #   -addext "extendedKeyUsage=codeSigning"
+
+ # COPY public_key.der /etc/pki/akmods/certs/public_key.der
+
+ #RUN --mount=type=secret,id=akmods_key,target=/etc/pki/akmods/private/private_key.priv \
+ # modinfo -k "${KVER}" -F signer nvidia | grep -q "MyOrg akmods signing key"; \
+ RUN --mount=type=cache,dst=/var/cache/ \
+     --mount=type=cache,dst=/var/cache/libdnf5 \
+     --mount=type=cache,dst=/var/log \
+     set -eux; \
+     KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)"; \
+     dnf5 install -y \
+       "kernel-devel-${KVER}" akmod-nvidia nvtop \
+       nvidia-driver-cuda xorg-x11-drv-nvidia-cuda \
+       nvidia-settings nvidia-vaapi-driver \
+       "nvidia-container-toolkit-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
+       "nvidia-container-toolkit-base-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
+       "libnvidia-container-tools-${NVIDIA_CONTAINER_TOOLKIT_VERSION}" \
+       "libnvidia-container1-${NVIDIA_CONTAINER_TOOLKIT_VERSION}"; \
+     akmods --force --kernels "${KVER}"; \
+     modinfo -k "${KVER}" nvidia >/dev/null; \
+     dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f \
+       "/usr/lib/modules/${KVER}/initramfs.img"
+
+ COPY <<EOF /usr/lib/bootc/kargs.d/00-nvidia.toml
+ kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1", "nvidia-drm.fbdev=1"]
+ EOF
+

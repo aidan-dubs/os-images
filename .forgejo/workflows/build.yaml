@@ -19,5 +19,6 @@ jobs:
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
-      - run: buildah build --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
+      - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=\"" + (join(" ")) + "\""' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
+      - run: buildah build --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
       - run: buildah push ${IMAGE}

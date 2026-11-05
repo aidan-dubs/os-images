@@ -1,3 +1,13 @@
+## Fedora Silverblue image
+
+Todos:
+
+- [ ] MoreWaita and accent colors setup
+- [ ] Enable Syncthing for all users
+- [ ] Set tailscale operator
+- [ ] Flatpak autoinstall at boot
+
+## Local Testing
 
 ```
 sudo podman build -t localhost/my-silverblue:latest -f Containerfile .
