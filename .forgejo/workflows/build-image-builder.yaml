@@ -30,8 +30,7 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-image-builder:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-image-builder" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
-      - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./image-builder/config.yaml > ./image-builder/argfile.conf
-      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg UNTAGGED_IMAGE --build-arg-file ./image-builder/argfile.conf --target base -t ${IMAGE} -f Containerfile ./image-builder/
+      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg UNTAGGED_IMAGE --target base -t ${IMAGE} -f Containerfile ./image-builder/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: cosign login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
       - run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE%:*}@$(cat /tmp/digest)"
