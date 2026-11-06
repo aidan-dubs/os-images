@@ -36,7 +36,7 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
       - run: id -u && buildah info --format '{{.store.GraphDriverName}} {{.store.GraphRoot}}'
-      - run: buildah pull
+      - run: buildah pull quay.io/fedora/fedora-silverblue:45
       - run: buildah inspect --format '{{len .OCIv1.RootFS.DiffIDs}}' quay.io/fedora/fedora-silverblue:45
       - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
       - run: findmnt -T /var/lib/containers -o TARGET,FSTYPE
