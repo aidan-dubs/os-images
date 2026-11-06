@@ -14,7 +14,6 @@ jobs:
       volumes:
         - con-cache:/var/lib/containers
         - tmp-cache:/var/tmp
-        - /home/runner/.config/containers/storage.conf:/etc/containers/storage.conf:ro
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
@@ -28,8 +27,6 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
       - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
-      - run: buildah info --format '{{.store.GraphDriverName}}'
       - run: findmnt -T /var/lib/containers -o TARGET,FSTYPE
-      - run: grep overlay /proc/filesystems
       - run: buildah build --layers --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
       - run: buildah push ${IMAGE}
