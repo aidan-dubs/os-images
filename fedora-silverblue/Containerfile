@@ -108,4 +108,34 @@ RUN set -eux; \
     printf "[org/gnome/shell]\nenabled-extensions=[%s]\n" "$LIST" > /etc/dconf/db/local.d/00-extensions; \
     dconf update
 
+COPY ../cosign.pub /etc/pki/containers/silverblue.pub
+
+
+ARG UNTAGGED_IMAGE
+
+RUN cat << EOF > /etc/containers/policy.json
+{
+  "default": [{ "type": "insecureAcceptAnything" }],
+  "transports": {
+    "docker": {
+      "${UNTAGGED_IMAGE}": [
+        {
+          "type": "sigstoreSigned",
+          "keyPath": "/etc/pki/containers/forgejo-silverblue.pub",
+          "signedIdentity": { "type": "matchRepository" }
+        }
+      ]
+    },
+    "docker-daemon": { "": [{ "type": "insecureAcceptAnything" }] }
+  }
+}
+EOF
+
+RUN mkdir -p /etc/containers/registries.d && cat << EOF > /etc/containers/registries.d/forgejo.yaml
+docker:
+  ${REGISTRY}:
+    use-sigstore-attachments: true
+EOF
+
+
 RUN bootc container lint

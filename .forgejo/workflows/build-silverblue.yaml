@@ -20,6 +20,9 @@ jobs:
       BUILDAH_ISOLATION: chroot
       STORAGE_DRIVER: btrfs
       CONTAINERS_STORAGE_CONF: /etc/containers/storage-ci.conf
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
     steps:
       - uses: actions/checkout@v7
       - run: |
@@ -34,11 +37,11 @@ jobs:
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
-      - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
-      - run: id -u && buildah info --format '{{.store.GraphDriverName}} {{.store.GraphRoot}}'
-      - run: buildah pull quay.io/fedora/fedora-silverblue:45
-      - run: buildah inspect --format '{{len .OCIv1.RootFS.DiffIDs}}' quay.io/fedora/fedora-silverblue:45
+          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue" >> "$FORGEJO_ENV"
+      - run: buildah login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
       - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
-      - run: findmnt -T /var/lib/containers -o TARGET,FSTYPE
-      - run: buildah build --layers --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
-      - run: buildah push ${IMAGE}
+      - run: buildah build --layers --build-arg UNTAGGED_IMAGE --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
+      - run: buildah push --digestfile /tmp/digest ${IMAGE}
+      - run: cosign login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
+      - run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE%:*}@$(cat /tmp/digest)"
+      - run: cosign verify --key cosign.pub "${IMAGE%:*}@$(cat /tmp/digest)"
