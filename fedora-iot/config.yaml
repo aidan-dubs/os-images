@@ -1,0 +1,103 @@
+---
+dnf:
+  remove:
+    - toolbox
+    - nano
+    - nano-default-editor
+  coprs:
+    - lilay/topgrade
+  copr_packages:
+    - topgrade
+  base:
+    # Basic CLI Tools
+    - vim
+    - tmux
+    - git
+    - wget2
+    - curl
+    - htop
+    - fastfetch
+    - screen
+    - xz
+    - chezmoi
+    - rsync
+    - rclone
+    - vim-enhanced
+    - vim-default-editor
+    # Containers
+    - podman
+    - podman-compose
+    - distrobox
+    - flatpak
+    - podlet
+    - buildah
+    - fuse
+    - fuse-libs
+    # Extra Tools
+    - zsh
+    - neovim
+    - ripgrep
+    - fd-find
+    - fastfetch
+    - bat
+    - tldr
+    - waypipe
+    # # BTRfs
+    - btrfs-progs
+    - btrfsmaintenance
+    - snapper
+    # # Networking and Infrastructure tools
+    - tcpdump
+    - bind9-next-utils
+    - socat
+    - libvirt
+    - qemu
+    - ansible-core
+    - kubernetes-client
+    - helm
+    - sqlite
+    # # Git Tools
+    - git
+    - git-lfs
+    - gh
+    - glab
+    - jq
+    # # Build and developer toops
+    - gcc
+    - gcc-c++
+    - make
+    - cmake
+    - ninja-build
+    - clang
+    - pkgconf-pkg-config
+    - just
+    - openssl-devel
+    - zlib-devel
+    - libffi-devel
+    - sqlite-devel
+    - readline-devel
+    - bzip2-devel
+    - xz-devel
+    # - java-latest-openjdk-devel
+    # - maven
+    # - gdb
+    # - valgrind
+    # - lldb
+    # - ccache
+    - python3
+    - python3-pip
+    - python3-devel
+    - pipx
+    - uv
+    - golang
+    - rustup
+    - nodejs
+    - nodejs-npm
+    - pnpm
+    # - php-cli
+    # - composer
+    # - ruby
+    # - ruby-devel
+    # - rubygem-bundler
+  from_url:
+    - https://storage.googleapis.com/minikube/releases/latest/minikube-latest.x86_64.rpm

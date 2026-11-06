@@ -1,3 +1,49 @@
-
 FROM quay.io/fedora/fedora-iot:45 as base
 
+ARG DNF_REMOVE DNF_COPRS DNF_COPR_PACKAGES DNF_BASE DNF_LATEX DNF_FROM_URL GNOME_EXTENSIONS
+
+ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
+
+RUN echo -e "max_parallel_downloads=20" >> /etc/dnf/dnf.conf
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 remove $DNF_ARGS $DNF_REMOVE
+
+RUN --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 $DNF_ARGS config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 config-manager $DNF_ARGS setopt fedora-cisco-openh264.enabled=1
+
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    for copr in $DNF_COPRS; do \
+        dnf5 $DNF_ARGS copr enable "$copr"; \
+    done
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 $DNF_ARGS install --allowerasing $DNF_BASE $DNF_COPR_PACKAGES
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS \
+        --setopt=tsflags=nodocs \
+         $DNF_FROM_URL
+
+RUN bootc container lint

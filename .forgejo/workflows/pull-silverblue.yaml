@@ -28,5 +28,4 @@ jobs:
   build:
     needs: image-pull
     if: needs.image-pull.outputs.changed == 'true'
-    uses: ./.forgejo/workflows/build.yml
-
+    uses: ./.forgejo/workflows/build-silverblue.yml

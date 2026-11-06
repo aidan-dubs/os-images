@@ -1,0 +1,44 @@
+on: 
+  push: 
+    branches:
+      - main
+    paths:
+      - "fedora-iot/**"
+      - ".forgejo/workflows/build-iot.yaml"
+jobs:
+  build:
+    runs-on: runner
+    container:
+      image: ci-buildah:latest
+      options: --user root --cap-add=SYS_ADMIN --security-opt label=disable
+      volumes:
+        - con-cache:/var/lib/containers
+        - tmp-cache:/var/tmp
+    env:
+      SERVER_URL: ${{ forgejo.server_url }}
+      OWNER: ${{ forgejo.repository_owner }}
+      BUILDAH_ISOLATION: chroot
+      STORAGE_DRIVER: btrfs
+      CONTAINERS_STORAGE_CONF: /etc/containers/storage-ci.conf
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          cat > "$CONTAINERS_STORAGE_CONF" <<'EOF'
+          [storage]
+          driver = "btrfs"
+          runroot = "/run/containers/storage"
+          graphroot = "/var/lib/containers/storage"
+          EOF
+      - run: |
+          REGISTRY="${SERVER_URL#*://}"
+          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
+          echo "IMAGE=$REGISTRY/$OWNER/my-iot:latest" >> "$FORGEJO_ENV"
+      - run: buildah login ${REGISTRY} --username $OWNER --password "${{ secrets.RUNNERTOKEN }}"
+      - run: id -u && buildah info --format '{{.store.GraphDriverName}} {{.store.GraphRoot}}'
+      - run: buildah pull quay.io/fedora/fedora-iot:45
+      - run: buildah inspect --format '{{len .OCIv1.RootFS.DiffIDs}}' quay.io/fedora/fedora-iot:45
+      - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-iot/config.yaml > ./fedora-iot/argfile.conf
+      - run: findmnt -T /var/lib/containers -o TARGET,FSTYPE
+      - run: buildah build --layers --build-arg-file ./fedora-iot/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-iot/
+      - run: buildah push ${IMAGE}

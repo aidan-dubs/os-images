@@ -1,3 +1,4 @@
+
 ARG REMOVING="toolbox nano ptyxis nano-default-editor gnome-tour"
 ARG REMOVING="${REMOVING} gnome-shell-extension-launch-new-instance"
 ARG REMOVING="${REMOVING} gnome-shell-extension-places-menu"
