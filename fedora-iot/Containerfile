@@ -1,0 +1,3 @@
+
+FROM quay.io/fedora/fedora-iot:45 as base
+
