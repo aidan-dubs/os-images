@@ -46,4 +46,33 @@ RUN --mount=type=cache,dst=/var/cache/ \
         --setopt=tsflags=nodocs \
          $DNF_FROM_URL
 
+COPY --from=cosign cosign.pub /etc/pki/containers/silverblue.pub
+
+
+ARG UNTAGGED_IMAGE
+
+RUN cat << EOF > /etc/containers/policy.json
+{
+  "default": [{ "type": "insecureAcceptAnything" }],
+  "transports": {
+    "docker": {
+      "${UNTAGGED_IMAGE}": [
+        {
+          "type": "sigstoreSigned",
+          "keyPath": "/etc/pki/containers/forgejo-silverblue.pub",
+          "signedIdentity": { "type": "matchRepository" }
+        }
+      ]
+    },
+    "docker-daemon": { "": [{ "type": "insecureAcceptAnything" }] }
+  }
+}
+EOF
+
+RUN mkdir -p /etc/containers/registries.d && cat << EOF > /etc/containers/registries.d/forgejo.yaml
+docker:
+  ${REGISTRY}:
+    use-sigstore-attachments: true
+EOF
+
 RUN bootc container lint
