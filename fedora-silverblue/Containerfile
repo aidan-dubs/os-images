@@ -1,12 +1,7 @@
 FROM quay.io/fedora/fedora-silverblue:45 as base
 
-ARG DNF_REMOVE
-ARG DNF_COPRS
-ARG DNF_COPR_PACKAGES
-ARG DNF_BASE
-ARG DNF_LATEX
-ARG DNF_FROM_URL
-ARG GNOME_EXTENSIONS
+ARG DNF_REMOVE DNF_COPRS DNF_COPR_PACKAGES DNF_BASE DNF_LATEX DNF_FROM_URL GNOME_EXTENSIONS
+
 ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
 
 RUN echo -e "max_parallel_downloads=20" >> /etc/dnf/dnf.conf
@@ -84,20 +79,27 @@ RUN --mount=type=cache,dst=/var/cache/ \
 
 
 # Download the rest from extensions.gnome.org
-RUN set -eux; \
+RUN set -eu; \
     SHELL_VER=$(gnome-shell --version | grep -oP '\d+' | head -1); \
+    echo "GNOME Shell major version: ${SHELL_VER}"; \
     for UUID in ${GNOME_EXTENSIONS}; do \
       case "$UUID" in *gcampax*) continue;; esac; \
-      DL=$(curl -fsSL "https://extensions.gnome.org/extension-info/?uuid=${UUID}&shell_version=${SHELL_VER}" \
-           | python3 -c 'import sys,json; print(json.load(sys.stdin)["download_url"])'); \
+      if ! DL=$(curl -fsSL -G "https://extensions.gnome.org/extension-info/" \
+                 --data-urlencode "uuid=${UUID}" \
+                 --data-urlencode "shell_version=${SHELL_VER}" \
+               | python3 -c 'import sys,json; print(json.load(sys.stdin)["download_url"])') \
+         || [ -z "$DL" ]; then \
+        echo "WARNING: no compatible build of ${UUID} for Shell ${SHELL_VER}, skipping" >&2; \
+        continue; \
+      fi; \
       DEST="/usr/share/gnome-shell/extensions/${UUID}"; \
       mkdir -p "$DEST"; \
       curl -fsSL "https://extensions.gnome.org${DL}" -o /tmp/ext.zip; \
       unzip -q -o /tmp/ext.zip -d "$DEST"; \
       rm /tmp/ext.zip; \
-      chmod -R u=rwX,go=rX /usr/share/gnome-shell/extensions/; \
       if [ -d "$DEST/schemas" ]; then glib-compile-schemas "$DEST/schemas"; fi; \
-    done
+    done; \
+    chmod -R u=rwX,go=rX /usr/share/gnome-shell/extensions/
 
 # Enable them by default for all users
 RUN set -eux; \
