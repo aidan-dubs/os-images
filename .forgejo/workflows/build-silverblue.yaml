@@ -19,8 +19,16 @@ jobs:
       OWNER: ${{ forgejo.repository_owner }}
       BUILDAH_ISOLATION: chroot
       STORAGE_DRIVER: btrfs
+      CONTAINERS_STORAGE_CONF: /etc/containers/storage-ci.conf
     steps:
       - uses: actions/checkout@v7
+      - run: |
+          cat > "$CONTAINERS_STORAGE_CONF" <<'EOF'
+          [storage]
+          driver = "btrfs"
+          runroot = "/run/containers/storage"
+          graphroot = "/var/lib/containers/storage"
+          EOF
       - run: |
           REGISTRY="${SERVER_URL#*://}"
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
