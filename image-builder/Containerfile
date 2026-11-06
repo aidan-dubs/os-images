@@ -23,7 +23,7 @@ RUN mkdir -p /etc/systemd/system/podman.socket.d \
 
 RUN systemctl enable podman.socket
 
-RUN loginctl enable-linger runner
+# RUN loginctl enable-linger runner
 
 # COPY ./forgejo-runner.service /etc/systemd/system/forgejo-runner.service
 
