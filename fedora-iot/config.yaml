@@ -33,6 +33,9 @@ dnf:
     - buildah
     - fuse
     - fuse-libs
+    - crun-vm
+    - crun-krun
+    - crun-wasm
     # Extra Tools
     - zsh
     - neovim
