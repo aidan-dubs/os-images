@@ -46,9 +46,10 @@ RUN --mount=type=cache,dst=/var/cache/ \
         --setopt=tsflags=nodocs \
          $DNF_FROM_URL
 
-COPY --from=cosign cosign.pub /etc/pki/containers/silverblue.pub
+COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
 
 
+ARG REGISTRY
 ARG UNTAGGED_IMAGE
 
 RUN cat << EOF > /etc/containers/policy.json
@@ -59,7 +60,7 @@ RUN cat << EOF > /etc/containers/policy.json
       "${UNTAGGED_IMAGE}": [
         {
           "type": "sigstoreSigned",
-          "keyPath": "/etc/pki/containers/forgejo-silverblue.pub",
+          "keyPath": "/etc/pki/containers/forgejo.pub",
           "signedIdentity": { "type": "matchRepository" }
         }
       ]

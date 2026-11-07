@@ -27,10 +27,10 @@ RUN systemctl enable podman.socket
 
 # COPY ./forgejo-runner.service /etc/systemd/system/forgejo-runner.service
 
-COPY --from=cosign cosign.pub /etc/pki/containers/silverblue.pub
+COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
 
 
-
+ARG REGISTRY
 ARG UNTAGGED_IMAGE
 
 RUN cat << EOF > /etc/containers/policy.json
@@ -41,7 +41,7 @@ RUN cat << EOF > /etc/containers/policy.json
       "${UNTAGGED_IMAGE}": [
         {
           "type": "sigstoreSigned",
-          "keyPath": "/etc/pki/containers/forgejo-silverblue.pub",
+          "keyPath": "/etc/pki/containers/forgejo.pub",
           "signedIdentity": { "type": "matchRepository" }
         }
       ]

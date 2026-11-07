@@ -26,6 +26,33 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-iot:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-iot" >> "$FORGEJO_ENV"
       - run: podman login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
+      - uses: actions/checkout@v7
+      - run: |
+          mkdir -p /etc/pki/containers /etc/containers/registries.d
+          cp cosign/cosign.pub /etc/pki/containers/forgejo.pub
+          cat > /etc/containers/policy.json <<EOF
+          {
+            "default": [{ "type": "insecureAcceptAnything" }],
+            "transports": {
+              "docker": {
+                "${UNTAGGED_IMAGE}": [
+                  {
+                    "type": "sigstoreSigned",
+                    "keyPath": "/etc/pki/containers/forgejo.pub",
+                    "signedIdentity": { "type": "matchRepository" }
+                  }
+                ]
+              },
+              "docker-daemon": { "": [{ "type": "insecureAcceptAnything" }] }
+            }
+          }
+          EOF
+          cat > /etc/containers/registries.d/forgejo.yaml <<EOF
+          docker:
+            ${REGISTRY}:
+              use-sigstore-attachments: true
+          EOF
+      - run: podman pull "$IMAGE"
       - run: image-builder build --bootc-ref $IMAGE --bootc-default-fs btrfs generic-iso
       - run: |
           ISO="$(find . -name '*.iso' | head -n1)"

@@ -4,6 +4,7 @@ on:
       - main
     paths:
       - "fedora-silverblue/**"
+      - "cosign/**"
       - ".forgejo/workflows/build-silverblue.yaml"
 jobs:
   build:
@@ -31,7 +32,7 @@ jobs:
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
       - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
-      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg UNTAGGED_IMAGE --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
+      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg REGISTRY --build-arg UNTAGGED_IMAGE --build-arg-file ./fedora-silverblue/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-silverblue/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: cosign login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
       - run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE%:*}@$(cat /tmp/digest)"

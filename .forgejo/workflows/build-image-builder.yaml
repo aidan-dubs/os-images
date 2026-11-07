@@ -4,6 +4,7 @@ on:
       - main
     paths:
       - "image-builder/**"
+      - "cosign/**"
       - ".forgejo/workflows/build-image-builder.yaml"
 jobs:
   build:
@@ -30,7 +31,7 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-image-builder:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-image-builder" >> "$FORGEJO_ENV"
       - run: buildah login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
-      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg UNTAGGED_IMAGE -t ${IMAGE} -f Containerfile ./image-builder/
+      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg REGISTRY --build-arg UNTAGGED_IMAGE -t ${IMAGE} -f Containerfile ./image-builder/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: cosign login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
       - run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE%:*}@$(cat /tmp/digest)"
