@@ -31,6 +31,7 @@ COPY --from=cosign cosign.pub /etc/pki/containers/silverblue.pub
 
 
 
+ARG REGISTRY
 ARG UNTAGGED_IMAGE
 
 RUN cat << EOF > /etc/containers/policy.json
