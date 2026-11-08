@@ -43,6 +43,9 @@ EOF
 
 ARG TARGET
 
+RUN --mount=type=secret,id=ostree-auth,target=/tmp/ostree-auth.json \
+    install -D -m 0600 /tmp/ostree-auth.json /etc/ostree/auth.json
+
 RUN test -n "$TARGET" || { echo "TARGET build argument must be set" >&2; exit 1; } && \
     mkdir -p /usr/share/anaconda && \
     printf 'bootc --source-imgref registry:%s --target-imgref %s\n' \
