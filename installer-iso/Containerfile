@@ -41,6 +41,8 @@ EOF
 
 # some configuration for anaconda
 
+ARG TARGET
+
 COPY <<EOT /usr/share/anaconda/interactive-defaults.ks
 bootc --source-imgref registry:$TARGET --target-imgref $TARGET
 EOT
