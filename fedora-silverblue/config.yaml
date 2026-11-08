@@ -64,7 +64,7 @@ dnf:
     - steam
     - gamescope
     - mangohud
-    - discord
+    # - discord  Installed in Containerfile
     # # BTRfs
     - btrfs-progs
     - btrfsmaintenance

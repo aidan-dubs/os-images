@@ -76,6 +76,11 @@ RUN --mount=type=cache,dst=/var/cache/ \
 #     --mount=type=cache,dst=/var/log \
 #     dnf5 group install $GROUPS
 
+RUN mkdir -p /var/opt /usr/lib/opt && \
+    dnf install -y discord && \
+    mv /var/opt/discord /usr/lib/opt/discord && \
+    echo 'L+ /var/opt/discord - - - - /usr/lib/opt/discord' \
+        > /usr/lib/tmpfiles.d/discord-opt.conf
 
 ARG DNF_FROM_URL
 RUN --mount=type=cache,dst=/var/cache/ \
