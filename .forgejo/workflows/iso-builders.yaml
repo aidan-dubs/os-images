@@ -35,6 +35,7 @@ jobs:
           --password $RUNNERTOKEN
       - run: |
           UPDATE_AUTHFILE="$(mktemp /tmp/ostree-auth.XXXXXX)"
+          printf '{}\n' > "$UPDATE_AUTHFILE"
           printf '%s' "$UPDATE_TOKEN" | buildah login \
             --authfile "$UPDATE_AUTHFILE" \
             --username "$OWNER" \
