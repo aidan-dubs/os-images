@@ -37,7 +37,6 @@ jobs:
           --layers
           --build-context cosign=./cosign/
           --build-arg TARGET=$REGISTRY/$OWNER/my-silverblue:latest
-          --target base
           -t ${IMAGE}
           -f Containerfile ./installer-iso/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
