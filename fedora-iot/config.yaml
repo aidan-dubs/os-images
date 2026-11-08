@@ -45,11 +45,11 @@ dnf:
     - bat
     - tldr
     - waypipe
-    # # BTRfs
+    # BTRfs
     - btrfs-progs
     - btrfsmaintenance
     - snapper
-    # # Networking and Infrastructure tools
+    # Networking and Infrastructure tools
     - tcpdump
     - bind9-next-utils
     - socat
@@ -59,13 +59,13 @@ dnf:
     - kubernetes-client
     - helm
     - sqlite
-    # # Git Tools
+    # Git Tools
     - git
     - git-lfs
     - gh
     - glab
     - jq
-    # # Build and developer toops
+    # Build and developer toops
     - gcc
     - gcc-c++
     - make
