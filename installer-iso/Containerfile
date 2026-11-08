@@ -43,9 +43,10 @@ EOF
 
 ARG TARGET
 
-COPY <<EOT /usr/share/anaconda/interactive-defaults.ks
-bootc --source-imgref registry:$TARGET --target-imgref $TARGET
-EOT
+RUN test -n "$TARGET" || { echo "TARGET build argument must be set" >&2; exit 1; } && \
+    mkdir -p /usr/share/anaconda && \
+    printf 'bootc --source-imgref registry:%s --target-imgref %s\n' \
+        "$TARGET" "$TARGET" > /usr/share/anaconda/interactive-defaults.ks
 
 # ---
 
