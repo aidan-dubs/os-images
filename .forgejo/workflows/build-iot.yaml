@@ -33,7 +33,7 @@ jobs:
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-iot" >> "$FORGEJO_ENV"
       - run: >
           buildah login ${REGISTRY}
-              --username ${OWNER} --password ${RUNNERTOKEN}
+          --username ${OWNER} --password ${RUNNERTOKEN}
       - run: >
           yq '.. |
           select(kind == "seq") |
