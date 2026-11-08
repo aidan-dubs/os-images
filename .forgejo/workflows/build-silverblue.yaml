@@ -30,21 +30,30 @@ jobs:
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue" >> "$FORGEJO_ENV"
-      - run: buildah login ${REGISTRY} \
-              --username $OWNER --password $RUNNERTOKEN
-      - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
-      - run: buildah build --layers \
-              --build-context cosign=./cosign/ \
-              --build-arg REGISTRY=${REGISTRY} \
-              --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
-              --target base -t ${IMAGE} \
-              -f Containerfile ./fedora-silverblue/
+      - run: >
+          buildah login ${REGISTRY}
+          --username $OWNER --password $RUNNERTOKEN
+      - run: >
+          yq '.. |
+          select(kind == "seq") |
+          (path | join("_") | upcase) + "=" + (join(" "))'
+          ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
+      - run: >
+          buildah build --layers
+          --build-context cosign=./cosign/ \
+          --build-arg REGISTRY=${REGISTRY} \
+          --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
+          --target base -t ${IMAGE} \
+          -f Containerfile ./fedora-silverblue/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
-      - run: cosign login ${REGISTRY} \
-              --username $OWNER --password $RUNNERTOKEN
-      - run: cosign sign --yes \
-              --key env://COSIGN_PRIVATE_KEY \
-              "${IMAGE%:*}@$(cat /tmp/digest)"
-      - run: cosign verify \
-              --key cosign/cosign.pub \
-              "${IMAGE%:*}@$(cat /tmp/digest)"
+      - run: >
+          cosign login ${REGISTRY}
+          --username $OWNER --password $RUNNERTOKEN
+      - run: >
+          cosign sign --yes
+          --key env://COSIGN_PRIVATE_KEY
+          "${IMAGE%:*}@$(cat /tmp/digest)"
+      - run: >
+          cosign verify
+          --key cosign/cosign.pub
+          "${IMAGE%:*}@$(cat /tmp/digest)"
