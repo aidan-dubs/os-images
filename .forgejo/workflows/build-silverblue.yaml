@@ -43,6 +43,7 @@ jobs:
           --build-context cosign=./cosign/
           --build-arg REGISTRY=${REGISTRY}
           --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE}
+          --build-arg ./fedora-silverblue/argfile.conf
           --target base -t ${IMAGE}
           -f Containerfile ./fedora-silverblue/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
