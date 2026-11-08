@@ -59,14 +59,16 @@ RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     mkdir -p /var/opt /usr/lib/opt && \
+    mkdir -p /usr/lib/tmpfiles.d && \
     dnf5 $DNF_ARGS install --allowerasing $DNF_BASE $DNF_COPR_PACKAGES && \
     for dir in /var/opt/*/; do \
-        [ -d "$dir" ] || continue;
+        [ -d "$dir" ] || continue; \
         name=$(basename "$dir"); \
         mv "$dir" "/usr/lib/opt/$name"; \
         echo "L+ /var/opt/$name - - - - /usr/lib/opt/$name" \
             >> /usr/lib/tmpfiles.d/opt-fix.conf; \
     done
+
 
 RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/htop.desktop
 
