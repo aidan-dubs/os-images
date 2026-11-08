@@ -1,9 +1,10 @@
-on: 
-  push: 
+on:
+  push:
     branches:
       - main
     paths:
       - "fedora-iot/**"
+      - "cosign/**"
       - ".forgejo/workflows/build-iot.yaml"
 jobs:
   build:
@@ -29,10 +30,22 @@ jobs:
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
           echo "IMAGE=$REGISTRY/$OWNER/my-iot:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-iot" >> "$FORGEJO_ENV"
-      - run: buildah login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
+      - run: buildah login ${REGISTRY} \
+              --username $OWNER --password $RUNNERTOKEN
       - run: yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-iot/config.yaml > ./fedora-iot/argfile.conf
-      - run: buildah build --layers --build-context cosign=./cosign/ --build-arg UNTAGGED_IMAGE --build-arg-file ./fedora-iot/argfile.conf --target base -t ${IMAGE} -f Containerfile ./fedora-iot/
+      - run: buildah build --layers \
+              --build-context cosign=./cosign/ \
+              --build-arg REGISTRY=${REGISTRY} \
+              --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
+              --build-arg-file ./fedora-iot/argfile.conf \
+              --target base -t ${IMAGE} \
+              -f Containerfile ./fedora-iot/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
-      - run: cosign login ${REGISTRY} --username $OWNER --password $RUNNERTOKEN
-      - run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE%:*}@$(cat /tmp/digest)"
-      - run: cosign verify --key cosign/cosign.pub "${IMAGE%:*}@$(cat /tmp/digest)"
+      - run: cosign login ${REGISTRY} \
+              --username $OWNER --password $RUNNERTOKEN
+      - run: cosign sign --yes \
+              --key env://COSIGN_PRIVATE_KEY \
+              "${IMAGE%:*}@$(cat /tmp/digest)"
+      - run: cosign verify \
+              --key cosign/cosign.pub \
+              "${IMAGE%:*}@$(cat /tmp/digest)"

@@ -110,7 +110,6 @@ RUN set -eux; \
 
 COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
 
-
 ARG REGISTRY
 ARG UNTAGGED_IMAGE
 
@@ -132,11 +131,14 @@ RUN cat << EOF > /etc/containers/policy.json
 }
 EOF
 
+RUN cat /etc/containers/policy.json
+
 RUN mkdir -p /etc/containers/registries.d && cat << EOF > /etc/containers/registries.d/forgejo.yaml
 docker:
   ${REGISTRY}:
     use-sigstore-attachments: true
 EOF
 
+run cat /etc/containers/registries.d/forgejo.yaml
 
 RUN bootc container lint

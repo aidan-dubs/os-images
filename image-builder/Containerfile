@@ -51,10 +51,14 @@ RUN cat << EOF > /etc/containers/policy.json
 }
 EOF
 
+RUN cat /etc/containers/policy.json
+
 RUN mkdir -p /etc/containers/registries.d && cat << EOF > /etc/containers/registries.d/forgejo.yaml
 docker:
   ${REGISTRY}:
     use-sigstore-attachments: true
 EOF
+
+run cat /etc/containers/registries.d/forgejo.yaml
 
 RUN bootc container lint

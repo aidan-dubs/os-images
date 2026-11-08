@@ -1,0 +1,38 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "installer-iso/**"
+      - "cosign/**"
+      - ".forgejo/workflows/iso-builders.yaml"
+jobs:
+  build:
+    runs-on: runner
+    container:
+      image: ci-buildah:latest
+      options: --user root --cap-add=SYS_ADMIN --security-opt label=disable
+      volumes:
+        - con-cache:/var/lib/containers
+        - tmp-cache:/var/tmp
+    env:
+      SERVER_URL: ${{ forgejo.server_url }}
+      OWNER: ${{ forgejo.repository_owner }}
+      BUILDAH_ISOLATION: chroot
+      RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          REGISTRY="${SERVER_URL#*://}"
+          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
+          echo "IMAGE=$REGISTRY/$OWNER/my-silverblue-iso:latest" >> "$FORGEJO_ENV"
+          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue-iso" >> "$FORGEJO_ENV"
+      - run: buildah login ${REGISTRY} \
+              --username $OWNER --password $RUNNERTOKEN
+      - run: buildah build --layers \
+              --build-context cosign=./cosign/ \
+              --build-arg TARGET=$REGISTRY/$OWNER/my-silverblue:latest \
+              --target base -t ${IMAGE} \
+              -f Containerfile ./installer-iso/
+      - run: buildah push --digestfile /tmp/digest ${IMAGE}
