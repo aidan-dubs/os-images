@@ -40,10 +40,10 @@ jobs:
           ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
       - run: >
           buildah build --layers
-          --build-context cosign=./cosign/ \
-          --build-arg REGISTRY=${REGISTRY} \
-          --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
-          --target base -t ${IMAGE} \
+          --build-context cosign=./cosign/
+          --build-arg REGISTRY=${REGISTRY}
+          --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE}
+          --target base -t ${IMAGE}
           -f Containerfile ./fedora-silverblue/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: >
