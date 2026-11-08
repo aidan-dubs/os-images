@@ -38,12 +38,13 @@ jobs:
           select(kind == "seq") |
           (path | join("_") | upcase) + "=" + (join(" "))'
           ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
+      - run: cat ./fedora-silverblue/argfile.conf
       - run: >
           buildah build --layers
           --build-context cosign=./cosign/
           --build-arg REGISTRY=${REGISTRY}
           --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE}
-          --build-arg ./fedora-silverblue/argfile.conf
+          --build-arg-file ./fedora-silverblue/argfile.conf
           --target base -t ${IMAGE}
           -f Containerfile ./fedora-silverblue/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
