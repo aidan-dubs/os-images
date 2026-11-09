@@ -73,6 +73,7 @@ jobs:
           AUTH_FILE="$(mktemp /tmp/containers-auth.XXXXXX)"
           OUTPUT_DIR="$(mktemp -d "$PWD/iso-output.XXXXXX")"
           trap 'rm -f -- "$AUTH_FILE"; rm -rf -- "$OUTPUT_DIR"' EXIT
+          printf '{}\n' > "$AUTH_FILE"
           printf '%s' "$RUNNERTOKEN" | podman login \
             --authfile "$AUTH_FILE" \
             --username "$OWNER" \
