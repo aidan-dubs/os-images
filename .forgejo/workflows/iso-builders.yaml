@@ -53,3 +53,46 @@ jobs:
             -t ${IMAGE} \
             -f Containerfile ./installer-iso/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
+  iso:
+    needs: build
+    runs-on: image-builder
+    env:
+      SERVER_URL: ${{ forgejo.server_url }}
+      OWNER: ${{ forgejo.repository_owner }}
+      RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          REGISTRY="${SERVER_URL#*://}"
+          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
+          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
+          echo "IMAGE=$REGISTRY/$OWNER/my-silverblue-iso:latest" >> "$FORGEJO_ENV"
+          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue-iso" >> "$FORGEJO_ENV"
+      - run: |
+          AUTH_FILE="$(mktemp /tmp/containers-auth.XXXXXX)"
+          OUTPUT_DIR="$(mktemp -d "$PWD/iso-output.XXXXXX")"
+          trap 'rm -f -- "$AUTH_FILE"; rm -rf -- "$OUTPUT_DIR"' EXIT
+          printf '%s' "$RUNNERTOKEN" | podman login \
+            --authfile "$AUTH_FILE" \
+            --username "$OWNER" \
+            --password-stdin "$REGISTRY"
+          export REGISTRY_AUTH_FILE="$AUTH_FILE"
+          sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build \
+            bootc-generic-iso \
+            --output-dir "$OUTPUT_DIR" \
+            --output-name my-silverblue-iso \
+            --bootc-ref "$IMAGE" \
+            --bootc-default-fs btrfs \
+            --bootc-pull-container
+          ISO_COUNT="$(find "$OUTPUT_DIR" -type f -name '*.iso' | wc -l)"
+          if [ "$ISO_COUNT" -ne 1 ]; then
+            echo "Expected one ISO artifact, found $ISO_COUNT" >&2
+            exit 1
+          fi
+          ISO_PATH="$(find "$OUTPUT_DIR" -type f -name '*.iso' -print -quit)"
+          PACKAGE_VERSION="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
+          curl --fail-with-body --show-error --silent \
+            --user "$OWNER:$RUNNERTOKEN" \
+            --upload-file "$ISO_PATH" \
+            "${SERVER_URL%/}/api/packages/$OWNER/generic/my-silverblue-iso/$PACKAGE_VERSION/$(basename "$ISO_PATH")"
