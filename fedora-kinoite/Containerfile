@@ -96,9 +96,7 @@ RUN cat << EOF > /etc/containers/policy.json
     "docker": {
       "${UNTAGGED_IMAGE}": [
         {
-          "type": "sigstoreSigned",
-          "keyPath": "/etc/pki/containers/forgejo.pub",
-          "signedIdentity": { "type": "matchRepository" }
+          "type": "insecureAcceptAnything"
         }
       ]
     },

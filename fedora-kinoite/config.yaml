@@ -1,6 +1,7 @@
 ---
 dnf:
   remove:
+    - "f*-backgrounds*"
     - fedora-bookmarks
     - fedora-flathub-remote
     - fedora-third-party.noarch
