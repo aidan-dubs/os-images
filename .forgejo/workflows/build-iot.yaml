@@ -39,15 +39,27 @@ jobs:
           select(kind == "seq") |
           (path | join("_") | upcase) + "=" + (join(" "))'
           ./fedora-iot/config.yaml > ./fedora-iot/argfile.conf
-      - run: >
-          buildah build
-          --layers
-          --build-context cosign=./cosign/
-          --build-arg REGISTRY=${REGISTRY}
-          --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE}
-          --build-arg-file ./fedora-iot/argfile.conf
-          --target base -t ${IMAGE}
-          -f Containerfile ./fedora-iot/
+      - run: |
+          UPDATE_AUTHFILE="$(mktemp /tmp/ostree-auth.XXXXXX)"
+          printf '{}\n' > "$UPDATE_AUTHFILE"
+          printf '%s' "$UPDATE_TOKEN" | buildah login \
+            --authfile "$UPDATE_AUTHFILE" \
+            --username "$OWNER" \
+            --password-stdin "$REGISTRY"
+          echo "UPDATE_AUTHFILE=$UPDATE_AUTHFILE" >> "$FORGEJO_ENV"
+        env:
+          UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
+      - run: |
+          trap 'rm -f -- "$UPDATE_AUTHFILE"' EXIT
+          buildah build \
+            --layers \
+            --build-context cosign=./cosign/ \
+            --build-arg REGISTRY=${REGISTRY} \
+            --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
+            --secret=id=ostree-auth,src=${UPDATE_AUTHFILE} \
+            --build-arg-file ./fedora-iot/argfile.conf \
+            --target base -t ${IMAGE} \
+            -f Containerfile ./fedora-iot/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: >
           cosign login ${REGISTRY}

@@ -1,7 +1,0 @@
-[Container]
-Image=localhost/my-image-builder:latest
-GlobalArgs=--runtime crun-vm
-Volume=/etc/image-builder-secrets:/etc/forgejo-runner/secrets:ro
-
-[Install]
-WantedBy=multi-user.target

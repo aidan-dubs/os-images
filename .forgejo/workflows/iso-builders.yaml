@@ -44,7 +44,6 @@ jobs:
         env:
           UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
       - run: |
-          trap 'rm -f -- "$UPDATE_AUTHFILE"' EXIT
           buildah build \
             --layers \
             --build-context cosign=./cosign/ \
@@ -55,6 +54,7 @@ jobs:
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
   iso:
     needs: build
+    if: false # Disabled until image-builder is figured out.
     runs-on: image-builder
     env:
       SERVER_URL: ${{ forgejo.server_url }}
