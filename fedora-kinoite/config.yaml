@@ -1,6 +1,10 @@
 ---
 dnf:
   remove:
+    - fedora-bookmarks
+    - fedora-flathub-remote
+    - fedora-third-party.noarch
+    - fedora-workstation-backgrounds
     - toolbox
   coprs:
     - lilay/topgrade

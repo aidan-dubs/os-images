@@ -1,12 +1,16 @@
 ---
 dnf:
   remove:
-    - toolbox
-    - nano
-    - ptyxis
-    - nano-default-editor
-    - gnome-tour
     - "gnome-shell-extension-*"
+    - fedora-bookmarks
+    - fedora-flathub-remote
+    - fedora-third-party.noarch
+    - fedora-workstation-backgrounds
+    - gnome-tour
+    - nano
+    - nano-default-editor
+    - ptyxis
+    - toolbox
   coprs:
     - lilay/topgrade
     - trixieua/morewaita-icon-theme
