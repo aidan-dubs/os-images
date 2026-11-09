@@ -2,6 +2,7 @@ FROM quay.io/fedora/fedora-bootc:45
 
 RUN dnf install -qy \
     anaconda \
+    anaconda-webui \
     anaconda-install-img-deps \
     anaconda-dracut \
     dracut-config-generic \
@@ -35,11 +36,17 @@ grub2:
   timeout: 5
   entries:
     - name: "Install Fedora (bootc)"
-      linux: \${kernelpath} \${root} inst.graphical
+      linux: \${kernelpath} \${root} inst.webui
       initrd: \${initrdpath}
 EOF
 
 # some configuration for anaconda
+
+RUN mkdir -p /etc/anaconda/conf.d
+COPY <<EOT /etc/anaconda/conf.d/10-installer.conf
+[User Interface]
+hidden_webui_pages = anaconda-screen-accounts
+EOT
 
 ARG TARGET
 
