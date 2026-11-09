@@ -1,0 +1,91 @@
+---
+dnf:
+  remove:
+    - toolbox
+  coprs:
+    - lilay/topgrade
+  copr_packages:
+    - topgrade
+  base:
+    # Basic CLI Tools
+    - vim
+    - tmux
+    - git
+    - wget2
+    - curl
+    - htop
+    - fastfetch
+    - screen
+    - xz
+    - rsync
+    - rclone
+    - vim-enhanced
+    - vim-default-editor
+    # Containers
+    - podman
+    - podman-compose
+    - distrobox
+    - podlet
+    - buildah
+    - fuse
+    - fuse-libs
+    # Extra Tools
+    - zsh
+    - ripgrep
+    - fd-find
+    - bat
+    - tldr
+    # Desktop Integrations
+    - iio-sensor-proxy
+    - waypipe
+    - gamescope
+    - mangohud
+    # BTRfs
+    - btrfs-progs
+    - btrfsmaintenance
+    - snapper
+    # Networking and Infrastructure tools
+    - wireshark
+    - tcpdump
+    - bind9-next-utils
+    - socat
+    - libvirt
+    - qemu
+    - sqlite
+    # Git Tools
+    - git
+    - git-lfs
+    - jq
+    # Build and developer toops
+    - gcc
+    - gcc-c++
+    - make
+    - cmake
+    - ninja-build
+    - clang
+    - pkgconf-pkg-config
+    - just
+    - openssl-devel
+    - zlib-devel
+    - libffi-devel
+    - sqlite-devel
+    - readline-devel
+    - bzip2-devel
+    - xz-devel
+    - gdb
+    - valgrind
+    - lldb
+    - ccache
+    - python3
+    - python3-pip
+    - python3-devel
+    - pipx
+    - uv
+    - golang
+    - rustup
+    - nodejs
+    - nodejs-npm
+    - code
+    - tailscale
+    - discord
+    - steam

@@ -1,0 +1,120 @@
+FROM quay.io/fedora/fedora-kinoite:45 as base
+
+ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
+
+
+
+RUN echo -e "max_parallel_downloads=20" >> /etc/dnf/dnf.conf
+
+RUN mkdir -p /etc/flatpak/remotes.d && \
+    curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
+
+RUN systemctl disable flatpak-add-fedora-repos.service && \
+    rm -f /usr/lib/systemd/system/flatpak-add-fedora-repos.service
+
+ARG DNF_REMOVE 
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 remove $DNF_ARGS $DNF_REMOVE
+
+RUN --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+RUN --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    rpm --import https://packages.microsoft.com/keys/microsoft.asc && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 $DNF_ARGS config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS rpmfusion-\*-appstream-data
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 config-manager $DNF_ARGS setopt fedora-cisco-openh264.enabled=1
+
+ARG DNF_COPRS
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    for copr in $DNF_COPRS; do \
+        dnf5 $DNF_ARGS copr enable "$copr"; \
+    done
+
+ARG DNF_COPR_PACKAGES DNF_BASE 
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    mkdir -p /var/opt /usr/lib/opt && \
+    mkdir -p /usr/lib/tmpfiles.d && \
+    dnf5 $DNF_ARGS install --allowerasing $DNF_BASE $DNF_COPR_PACKAGES && \
+    for dir in /var/opt/*/; do \
+        [ -d "$dir" ] || continue; \
+        name=$(basename "$dir"); \
+        mv "$dir" "/usr/lib/opt/$name"; \
+        echo "L+ /var/opt/$name - - - - /usr/lib/opt/$name" \
+            >> /usr/lib/tmpfiles.d/opt-fix.conf; \
+    done
+
+
+RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/htop.desktop
+
+
+# ARG DNF_FROM_URL
+# RUN --mount=type=cache,dst=/var/cache/ \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     --mount=type=cache,dst=/var/log \
+#     dnf5 install $DNF_ARGS \
+#         --setopt=tsflags=nodocs \
+#          $DNF_FROM_URL
+
+COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
+
+ARG REGISTRY
+ARG UNTAGGED_IMAGE
+
+RUN --mount=type=secret,id=ostree-auth,target=/tmp/ostree-auth.json \
+    install -D -m 0600 /tmp/ostree-auth.json /etc/ostree/auth.json
+
+RUN cat << EOF > /etc/containers/policy.json
+{
+  "default": [{ "type": "insecureAcceptAnything" }],
+  "transports": {
+    "docker": {
+      "${UNTAGGED_IMAGE}": [
+        {
+          "type": "sigstoreSigned",
+          "keyPath": "/etc/pki/containers/forgejo.pub",
+          "signedIdentity": { "type": "matchRepository" }
+        }
+      ]
+    },
+    "docker-daemon": { "": [{ "type": "insecureAcceptAnything" }] }
+  }
+}
+EOF
+
+RUN cat /etc/containers/policy.json
+
+RUN mkdir -p /etc/containers/registries.d && cat << EOF > /etc/containers/registries.d/forgejo.yaml
+docker:
+  ${REGISTRY}:
+    use-sigstore-attachments: true
+EOF
+
+run cat /etc/containers/registries.d/forgejo.yaml
+
+RUN bootc container lint
