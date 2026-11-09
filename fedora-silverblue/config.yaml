@@ -2,6 +2,7 @@
 dnf:
   remove:
     - "gnome-shell-extension-*"
+    - "f*-backgrounds*"
     - fedora-bookmarks
     - fedora-flathub-remote
     - fedora-third-party.noarch
