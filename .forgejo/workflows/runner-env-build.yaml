@@ -4,7 +4,7 @@ on:
       - main
     paths:
       - '.forgejo/ci-image/**'
-      - '.forgejo/workflows/build-env.yaml'
+      - '.forgejo/workflows/runner-env-build.yaml'
 jobs:
   build-env:
     runs-on: runner

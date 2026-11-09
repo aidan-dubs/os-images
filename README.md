@@ -10,12 +10,12 @@ Todos:
 ## Local Testing
 
 ```
-sudo podman build -t localhost/my-silverblue:latest -f Containerfile .
+sudo podman build -t localhost/silverblue:latest -f Containerfile .
 ```
 
 ```
 sudo image-builder build \
-  --bootc-ref localhost/my-silverblue:latest \
+  --bootc-ref localhost/silverblue:latest \
   --bootc-default-fs btrfs \
   --output-dir /var/lib/libvirt/images/ \
   qcow2

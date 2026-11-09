@@ -5,7 +5,7 @@ on:
     paths:
       - "fedora-kinoite/**"
       - "cosign/**"
-      - ".forgejo/workflows/build-kinoite.yaml"
+      - ".forgejo/workflows/kinoite-build.yaml"
 jobs:
   build:
     runs-on: runner
@@ -22,6 +22,8 @@ jobs:
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
       RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+      IMAGE_NAME: kinoite
+      UPDATE_AUTHFILE: ./update-auth.json
     steps:
       - uses: actions/checkout@v7
       - run: |
@@ -29,46 +31,41 @@ jobs:
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
           echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
-          echo "IMAGE=$REGISTRY/$OWNER/my-kinoite:latest" >> "$FORGEJO_ENV"
-          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-kinoite" >> "$FORGEJO_ENV"
       - run: >
-          buildah login ${REGISTRY}
-          --username $OWNER --password $RUNNERTOKEN
+          buildah login "$REGISTRY"
+          --username "$OWNER" --password "$RUNNERTOKEN"
       - run: >
-          yq '.. |
-          select(kind == "seq") |
-          (path | join("_") | upcase) + "=" + (join(" "))'
+          yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))'
           ./fedora-kinoite/config.yaml > ./fedora-kinoite/argfile.conf
       - run: cat ./fedora-kinoite/argfile.conf
       - run: |
-          UPDATE_AUTHFILE="$(mktemp /tmp/ostree-auth.XXXXXX)"
           printf '{}\n' > "$UPDATE_AUTHFILE"
           printf '%s' "$UPDATE_TOKEN" | buildah login \
             --authfile "$UPDATE_AUTHFILE" \
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
-          echo "UPDATE_AUTHFILE=$UPDATE_AUTHFILE" >> "$FORGEJO_ENV"
         env:
           UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
-      - run: |
-          trap 'rm -f -- "$UPDATE_AUTHFILE"' EXIT
-          buildah build --layers \
-            --build-context cosign=./cosign/ \
-            --build-arg REGISTRY=${REGISTRY} \
-            --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
-            --secret=id=ostree-auth,src=${UPDATE_AUTHFILE} \
-            --build-arg-file ./fedora-kinoite/argfile.conf \
-            --target base -t ${IMAGE} \
-            -f Containerfile ./fedora-kinoite/
-      - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: >
-          cosign login ${REGISTRY}
-          --username $OWNER --password $RUNNERTOKEN
+          buildah build --layers
+          --build-context cosign=./cosign/
+          --build-arg "REGISTRY=$REGISTRY"
+          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          --build-arg-file ./fedora-kinoite/argfile.conf
+          --target base -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          -f Containerfile ./fedora-kinoite/
+      - run: >
+          buildah push --digestfile ./digest
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+      - run: >
+          cosign login "$REGISTRY"
+          --username "$OWNER" --password "$RUNNERTOKEN"
       - run: >
           cosign sign --yes
           --key env://COSIGN_PRIVATE_KEY
-          "${IMAGE%:*}@$(cat /tmp/digest)"
+          "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./digest)"
       - run: >
           cosign verify
           --key cosign/cosign.pub
-          "${IMAGE%:*}@$(cat /tmp/digest)"
+          "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./digest)"

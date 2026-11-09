@@ -3,11 +3,11 @@ on:
     branches:
       - main
     paths:
-      - "installer-iso/**"
+      - "anaconda-installer/**"
       - "cosign/**"
-      - ".forgejo/workflows/iso-kinoite.yaml"
+      - ".forgejo/workflows/kinoite-installer.yaml"
 jobs:
-  kinoite-iso-image-build:
+  kinoite-installer-build:
     runs-on: runner
     container:
       image: ci-buildah:latest
@@ -20,6 +20,8 @@ jobs:
       OWNER: ${{ forgejo.repository_owner }}
       BUILDAH_ISOLATION: chroot
       RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+      IMAGE_NAME: kinoite-installer
+      UPDATE_AUTHFILE: ./update-auth.json
     steps:
       - uses: actions/checkout@v7
       - run: |
@@ -27,31 +29,29 @@ jobs:
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
           echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
-          echo "IMAGE=$REGISTRY/$OWNER/my-kinoite-iso:latest" >> "$FORGEJO_ENV"
-          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-kinoite-iso" >> "$FORGEJO_ENV"
       - run: >
-          buildah login ${REGISTRY}
-          --username $OWNER
-          --password $RUNNERTOKEN
+          buildah login "$REGISTRY"
+          --username "$OWNER"
+          --password "$RUNNERTOKEN"
       - run: |
-          UPDATE_AUTHFILE="$(mktemp /tmp/ostree-auth.XXXXXX)"
           printf '{}\n' > "$UPDATE_AUTHFILE"
           printf '%s' "$UPDATE_TOKEN" | buildah login \
             --authfile "$UPDATE_AUTHFILE" \
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
-          echo "UPDATE_AUTHFILE=$UPDATE_AUTHFILE" >> "$FORGEJO_ENV"
         env:
           UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
-      - run: |
-          buildah build \
-            --layers \
-            --build-context cosign=./cosign/ \
-            --build-arg TARGET=$REGISTRY/$OWNER/my-kinoite:latest \
-            --secret=id=ostree-auth,src=${UPDATE_AUTHFILE} \
-            -t ${IMAGE} \
-            -f Containerfile ./installer-iso/
-      - run: buildah push --digestfile /tmp/digest ${IMAGE}
+      - run: >
+          buildah build
+          --layers
+          --build-context cosign=./cosign/
+          --build-arg "TARGET=$REGISTRY/$OWNER/kinoite:latest"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          -f Containerfile ./anaconda-installer/
+      - run: >
+          buildah push --digestfile ./digest
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
   iso:
     if: false # Disabled until image-builder is figured out.
     runs-on: image-builder
@@ -59,7 +59,9 @@ jobs:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
       RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+      IMAGE_NAME: kinoite-installer
       AUTH_FILE: ./registry-auth.json
+      REGISTRY_AUTH_FILE: ./registry-auth.json
       OUTPUT_DIR: ./iso-output
     steps:
       - uses: actions/checkout@v7
@@ -68,23 +70,19 @@ jobs:
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
           echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
-          echo "IMAGE=$REGISTRY/$OWNER/my-kinoite-iso:latest" >> "$FORGEJO_ENV"
-          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-kinoite-iso" >> "$FORGEJO_ENV"
       - run: |
           printf '{}\n' > "$AUTH_FILE"
           printf '%s' "$RUNNERTOKEN" | podman login \
             --authfile "$AUTH_FILE" \
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
-      - run: |
-          export REGISTRY_AUTH_FILE="$AUTH_FILE"
-          sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build \
-            bootc-generic-iso \
-            --output-dir "$OUTPUT_DIR" \
-            --output-name my-kinoite-iso \
-            --bootc-ref "$IMAGE" \
-            --bootc-default-fs btrfs \
-            --bootc-pull-container
+      - run: >
+          sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build bootc-generic-iso
+          --output-dir "$OUTPUT_DIR"
+          --output-name "$IMAGE_NAME"
+          --bootc-ref "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          --bootc-default-fs btrfs
+          --bootc-pull-container
       - run: |
           ISO_COUNT="$(find "$OUTPUT_DIR" -type f -name '*.iso' | wc -l)"
           if [ "$ISO_COUNT" -ne 1 ]; then
@@ -96,4 +94,4 @@ jobs:
           curl --fail-with-body --show-error --silent \
             --user "$OWNER:$RUNNERTOKEN" \
             --upload-file "$ISO_PATH" \
-            "${SERVER_URL%/}/api/packages/$OWNER/generic/my-kinoite-iso/$PACKAGE_VERSION/$(basename "$ISO_PATH")"
+            "${SERVER_URL%/}/api/packages/$OWNER/generic/$IMAGE_NAME/$PACKAGE_VERSION/$(basename "$ISO_PATH")"

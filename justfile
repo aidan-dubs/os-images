@@ -1,4 +1,4 @@
-image    := "localhost/my-silverblue:latest"
+image    := "localhost/silverblue:latest"
 vm       := "sb-test"
 out_dir  := "/var/lib/libvirt/images"
 qcow     := out_dir / "bootc-fedora-45-qcow2-x86_64.qcow2"
