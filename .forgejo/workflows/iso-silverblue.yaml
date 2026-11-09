@@ -53,7 +53,6 @@ jobs:
             -f Containerfile ./installer-iso/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
   iso:
-    needs: build
     if: false # Disabled until image-builder is figured out.
     runs-on: image-builder
     env:
