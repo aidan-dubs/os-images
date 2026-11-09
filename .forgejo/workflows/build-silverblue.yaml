@@ -27,6 +27,7 @@ jobs:
       - run: |
           REGISTRY="${SERVER_URL#*://}"
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue" >> "$FORGEJO_ENV"
@@ -39,14 +40,26 @@ jobs:
           (path | join("_") | upcase) + "=" + (join(" "))'
           ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
       - run: cat ./fedora-silverblue/argfile.conf
-      - run: >
-          buildah build --layers
-          --build-context cosign=./cosign/
-          --build-arg REGISTRY=${REGISTRY}
-          --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE}
-          --build-arg-file ./fedora-silverblue/argfile.conf
-          --target base -t ${IMAGE}
-          -f Containerfile ./fedora-silverblue/
+      - run: |
+          UPDATE_AUTHFILE="$(mktemp /tmp/ostree-auth.XXXXXX)"
+          printf '{}\n' > "$UPDATE_AUTHFILE"
+          printf '%s' "$UPDATE_TOKEN" | buildah login \
+            --authfile "$UPDATE_AUTHFILE" \
+            --username "$OWNER" \
+            --password-stdin "$REGISTRY"
+          echo "UPDATE_AUTHFILE=$UPDATE_AUTHFILE" >> "$FORGEJO_ENV"
+        env:
+          UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
+      - run: |
+          trap 'rm -f -- "$UPDATE_AUTHFILE"' EXIT
+          buildah build --layers \
+            --build-context cosign=./cosign/ \
+            --build-arg REGISTRY=${REGISTRY} \
+            --build-arg UNTAGGED_IMAGE=${UNTAGGED_IMAGE} \
+            --secret=id=ostree-auth,src=${UPDATE_AUTHFILE} \
+            --build-arg-file ./fedora-silverblue/argfile.conf \
+            --target base -t ${IMAGE} \
+            -f Containerfile ./fedora-silverblue/
       - run: buildah push --digestfile /tmp/digest ${IMAGE}
       - run: >
           cosign login ${REGISTRY}

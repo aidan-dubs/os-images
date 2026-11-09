@@ -131,6 +131,9 @@ COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
 ARG REGISTRY
 ARG UNTAGGED_IMAGE
 
+RUN --mount=type=secret,id=ostree-auth,target=/tmp/ostree-auth.json \
+    install -D -m 0600 /tmp/ostree-auth.json /etc/ostree/auth.json
+
 RUN cat << EOF > /etc/containers/policy.json
 {
   "default": [{ "type": "insecureAcceptAnything" }],
