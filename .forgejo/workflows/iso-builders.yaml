@@ -72,7 +72,6 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue-iso:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue-iso" >> "$FORGEJO_ENV"
       - run: |
-          trap 'rm -f -- "$AUTH_FILE"; rm -rf -- "$OUTPUT_DIR"' EXIT
           printf '{}\n' > "$AUTH_FILE"
           printf '%s' "$RUNNERTOKEN" | podman login \
             --authfile "$AUTH_FILE" \
