@@ -5,9 +5,9 @@ on:
     paths:
       - "installer-iso/**"
       - "cosign/**"
-      - ".forgejo/workflows/iso-builders.yaml"
+      - ".forgejo/workflows/iso-silverblue.yaml"
 jobs:
-  build:
+  silverblue-iso-image-build:
     runs-on: runner
     container:
       image: ci-buildah:latest

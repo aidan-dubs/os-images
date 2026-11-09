@@ -1,0 +1,100 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "installer-iso/**"
+      - "cosign/**"
+      - ".forgejo/workflows/iso-kinoite.yaml"
+jobs:
+  kinoite-iso-image-build:
+    runs-on: runner
+    container:
+      image: ci-buildah:latest
+      options: --user root --cap-add=SYS_ADMIN --security-opt label=disable
+      volumes:
+        - con-cache:/var/lib/containers
+        - tmp-cache:/var/tmp
+    env:
+      SERVER_URL: ${{ forgejo.server_url }}
+      OWNER: ${{ forgejo.repository_owner }}
+      BUILDAH_ISOLATION: chroot
+      RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          REGISTRY="${SERVER_URL#*://}"
+          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
+          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
+          echo "IMAGE=$REGISTRY/$OWNER/my-kinoite-iso:latest" >> "$FORGEJO_ENV"
+          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-kinoite-iso" >> "$FORGEJO_ENV"
+      - run: >
+          buildah login ${REGISTRY}
+          --username $OWNER
+          --password $RUNNERTOKEN
+      - run: |
+          UPDATE_AUTHFILE="$(mktemp /tmp/ostree-auth.XXXXXX)"
+          printf '{}\n' > "$UPDATE_AUTHFILE"
+          printf '%s' "$UPDATE_TOKEN" | buildah login \
+            --authfile "$UPDATE_AUTHFILE" \
+            --username "$OWNER" \
+            --password-stdin "$REGISTRY"
+          echo "UPDATE_AUTHFILE=$UPDATE_AUTHFILE" >> "$FORGEJO_ENV"
+        env:
+          UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
+      - run: |
+          buildah build \
+            --layers \
+            --build-context cosign=./cosign/ \
+            --build-arg TARGET=$REGISTRY/$OWNER/my-kinoite:latest \
+            --secret=id=ostree-auth,src=${UPDATE_AUTHFILE} \
+            -t ${IMAGE} \
+            -f Containerfile ./installer-iso/
+      - run: buildah push --digestfile /tmp/digest ${IMAGE}
+  iso:
+    needs: build
+    if: false # Disabled until image-builder is figured out.
+    runs-on: image-builder
+    env:
+      SERVER_URL: ${{ forgejo.server_url }}
+      OWNER: ${{ forgejo.repository_owner }}
+      RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+      AUTH_FILE: ./registry-auth.json
+      OUTPUT_DIR: ./iso-output
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          REGISTRY="${SERVER_URL#*://}"
+          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
+          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
+          echo "IMAGE=$REGISTRY/$OWNER/my-kinoite-iso:latest" >> "$FORGEJO_ENV"
+          echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-kinoite-iso" >> "$FORGEJO_ENV"
+      - run: |
+          printf '{}\n' > "$AUTH_FILE"
+          printf '%s' "$RUNNERTOKEN" | podman login \
+            --authfile "$AUTH_FILE" \
+            --username "$OWNER" \
+            --password-stdin "$REGISTRY"
+      - run: |
+          export REGISTRY_AUTH_FILE="$AUTH_FILE"
+          sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build \
+            bootc-generic-iso \
+            --output-dir "$OUTPUT_DIR" \
+            --output-name my-kinoite-iso \
+            --bootc-ref "$IMAGE" \
+            --bootc-default-fs btrfs \
+            --bootc-pull-container
+      - run: |
+          ISO_COUNT="$(find "$OUTPUT_DIR" -type f -name '*.iso' | wc -l)"
+          if [ "$ISO_COUNT" -ne 1 ]; then
+            echo "Expected one ISO artifact, found $ISO_COUNT" >&2
+            exit 1
+          fi
+          ISO_PATH="$(find "$OUTPUT_DIR" -type f -name '*.iso' -print -quit)"
+          PACKAGE_VERSION="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
+          curl --fail-with-body --show-error --silent \
+            --user "$OWNER:$RUNNERTOKEN" \
+            --upload-file "$ISO_PATH" \
+            "${SERVER_URL%/}/api/packages/$OWNER/generic/my-kinoite-iso/$PACKAGE_VERSION/$(basename "$ISO_PATH")"
