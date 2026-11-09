@@ -61,7 +61,6 @@ jobs:
       OWNER: ${{ forgejo.repository_owner }}
       RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
       AUTH_FILE: ./registry-auth.json
-      REGISTRY_AUTH_FILE: ./registry-auth.json
       OUTPUT_DIR: ./iso-output
     steps:
       - uses: actions/checkout@v7
@@ -80,6 +79,7 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
+          export REGISTRY_AUTH_FILE="$AUTH_FILE"
           sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build \
             bootc-generic-iso \
             --output-dir "$OUTPUT_DIR" \
