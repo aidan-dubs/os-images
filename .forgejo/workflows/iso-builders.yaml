@@ -60,6 +60,9 @@ jobs:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
       RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+      AUTH_FILE: ./registry-auth.json
+      REGISTRY_AUTH_FILE: ./registry-auth.json
+      OUTPUT_DIR: ./iso-output
     steps:
       - uses: actions/checkout@v7
       - run: |
@@ -70,15 +73,13 @@ jobs:
           echo "IMAGE=$REGISTRY/$OWNER/my-silverblue-iso:latest" >> "$FORGEJO_ENV"
           echo "UNTAGGED_IMAGE=$REGISTRY/$OWNER/my-silverblue-iso" >> "$FORGEJO_ENV"
       - run: |
-          AUTH_FILE="$(mktemp /tmp/containers-auth.XXXXXX)"
-          OUTPUT_DIR="$(mktemp -d "$PWD/iso-output.XXXXXX")"
           trap 'rm -f -- "$AUTH_FILE"; rm -rf -- "$OUTPUT_DIR"' EXIT
           printf '{}\n' > "$AUTH_FILE"
           printf '%s' "$RUNNERTOKEN" | podman login \
             --authfile "$AUTH_FILE" \
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
-          export REGISTRY_AUTH_FILE="$AUTH_FILE"
+      - run: |
           sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build \
             bootc-generic-iso \
             --output-dir "$OUTPUT_DIR" \
@@ -86,6 +87,7 @@ jobs:
             --bootc-ref "$IMAGE" \
             --bootc-default-fs btrfs \
             --bootc-pull-container
+      - run: |
           ISO_COUNT="$(find "$OUTPUT_DIR" -type f -name '*.iso' | wc -l)"
           if [ "$ISO_COUNT" -ne 1 ]; then
             echo "Expected one ISO artifact, found $ISO_COUNT" >&2
