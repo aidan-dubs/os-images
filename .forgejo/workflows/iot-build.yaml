@@ -11,17 +11,13 @@ jobs:
     runs-on: runner
     container:
       image: ci-buildah:latest
-      options: --user root --cap-add=SYS_ADMIN --security-opt label=disable
-      volumes:
-        - con-cache:/var/lib/containers
-        - tmp-cache:/var/tmp
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
       BUILDAH_ISOLATION: chroot
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      RUNNERTOKEN: ${{ secrets.RUNNERTOKEN }}
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       IMAGE_NAME: iot
       UPDATE_AUTHFILE: ./update-auth.json
     steps:
@@ -33,7 +29,7 @@ jobs:
           echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
       - run: >
           buildah login "$REGISTRY"
-          --username "$OWNER" --password "$RUNNERTOKEN"
+          --username "$OWNER" --password "$BOT_TOKEN"
       - run: >
           yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))'
           ./fedora-iot/config.yaml > ./fedora-iot/argfile.conf
@@ -60,7 +56,7 @@ jobs:
       - run: >
           cosign login "$REGISTRY"
           --username "$OWNER"
-          --password "$RUNNERTOKEN"
+          --password "$BOT_TOKEN"
       - run: >
           cosign sign --yes
           --key env://COSIGN_PRIVATE_KEY

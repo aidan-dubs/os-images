@@ -35,5 +35,39 @@ destroy:
 # Full build pipeline, then launch the VM
 all: build disk vm
 
+
+bootstrap-iot:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    TMPDIR=$(mktemp -d) || exit 1
+    trap 'rm -rf "$TMPDIR"' EXIT
+
+    UPDATE_AUTHFILE=$TMPDIR/update-auth.json
+    UPDATE_TOKEN="doesntwork"
+    ARGFILE=$TMPDIR/argfile.conf
+    IMAGE_NAME=iot
+
+    sudo podman build --target base -t localhost:iot -f Containerfile ./fedora-iot/
+    yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))' ./fedora-iot/config.yaml > $ARGFILE
+
+    printf '{}\n' > "$UPDATE_AUTHFILE"
+    printf '%s' "$UPDATE_TOKEN" | buildah login \
+        --authfile "$UPDATE_AUTHFILE" \
+        --username "$OWNER" \
+        --password-stdin "$REGISTRY"
+
+    sudo buildah build --layers
+        --build-context cosign=./cosign/
+        --build-arg "REGISTRY=$REGISTRY"
+        --build-arg "UNTAGGED_IMAGE=local/$IMAGE_NAME"
+        --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+        --build-arg-file ./fedora-iot/argfile.conf
+        --target base -t "local/$IMAGE_NAME:latest"
+            -f Containerfile ./fedora-iot/
+
+
+
+
 # Tear down any old VM, rebuild everything, and relaunch
 rebuild: destroy build disk vm
