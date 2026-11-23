@@ -3,15 +3,15 @@ on:
     branches:
       - main
     paths:
-      - '.forgejo/ci-image/**'
-      - '.forgejo/workflows/ci-buildah-build.yaml'
+      - ".forgejo/ci-image/**"
+      - ".forgejo/workflows/ci-buildah-build.yaml"
 jobs:
   build-env:
     runs-on: runner
     container:
       image: quay.io/containers/buildah:v1.43
       volumes:
-        - /home/runner/.local/share/containers:/var/lib/containers
+        - runner-cache:/var/lib/containers
     steps:
       - run: dnf install -y git nodejs
       - uses: actions/checkout@v7
