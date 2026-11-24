@@ -1,4 +1,6 @@
 FROM quay.io/containers/buildah:v1.43
+USER root
+
 RUN dnf install -y nodejs git yq image-builder
 
 # Image builder tries to chcon even when it doesn't need to
