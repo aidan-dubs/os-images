@@ -81,12 +81,13 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          readlink /proc/self/ns/user /proc/self/ns/mnt
-          ls -l /proc/self/ns/
-          cat /proc/self/mountinfo | head -5
-          mount -t tmpfs tmpfs /mnt || true
-          unshare -m mount -t tmpfs tmpfs /mnt || true
-          echo done
+          mount --version
+          python3 - <<'EOF'
+          import ctypes, os
+          libc = ctypes.CDLL(None, use_errno=True)
+          r = libc.mount(b"tmpfs", b"/mnt", b"tmpfs", 0, None)
+          print("ret", r, "errno", ctypes.get_errno(), os.strerror(ctypes.get_errno()))
+          EOF
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
