@@ -49,8 +49,9 @@ jobs:
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
   iso:
-    if: false # Disabled until image-builder is figured out.
-    runs-on: image-builder
+    runs-on: runner
+    container:
+      image: ghcr.io/osbuild/image-builder-cli:latest
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
@@ -73,7 +74,7 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: >
-          sudo --preserve-env=REGISTRY_AUTH_FILE image-builder build bootc-generic-iso
+          image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
           --output-name "$IMAGE_NAME"
           --bootc-ref "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
