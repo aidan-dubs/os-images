@@ -76,12 +76,12 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          sleep 100
-          grep -E 'Seccomp|NoNewPrivs' /proc/self/status
-          cat /proc/self/attr/current
-          ls /sys/fs/selinux 2>/dev/null | head -3
-          mount -t tmpfs tmpfs /mnt; echo "exit=$?"
-          unshare -m mount -t tmpfs tmpfs /mnt; echo "unshare exit=$?"
+          readlink /proc/self/ns/user /proc/self/ns/mnt
+          ls -l /proc/self/ns/
+          cat /proc/self/mountinfo | head -5
+          mount -t tmpfs tmpfs /mnt || true
+          unshare -m mount -t tmpfs tmpfs /mnt || true
+          echo done
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
