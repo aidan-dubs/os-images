@@ -49,9 +49,10 @@ jobs:
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
   iso:
+    needs: silverblue-installer-build
     runs-on: runner
     container:
-      image: ghcr.io/osbuild/image-builder-cli:latest
+      image: ci-buildah:latest
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
