@@ -1,5 +1,9 @@
 FROM quay.io/containers/buildah:v1.43
 RUN dnf install -y nodejs git yq image-builder
+
+# Image builder tries to chcon even when it doesn't need to
+RUN printf '#!/bin/sh\nexit 0\n' > /usr/bin/chcon && chmod +x /usr/bin/chcon
+
 COPY ./storage.conf /etc/containers/storage.conf
 
 
