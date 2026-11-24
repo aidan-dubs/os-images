@@ -81,11 +81,9 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          grep -E '^(Uid|Gid|CapInh|CapPrm|CapAmb)' /proc/self/status
-          which -a mount
-          ls -l $(which mount)
-          env | grep -i -E 'libmount|^USER|^HOME|^LOGNAME'
+          command -v mount; ls -l "$(command -v mount)"
           LIBMOUNT_DEBUG=all mount -t tmpfs tmpfs /mnt 2>&1 | tail -30
+          strace -f -e trace=fsopen,fsconfig,fsmount,move_mount,mount mount -t tmpfs tmpfs /mnt 2>&1 | tail -10
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
