@@ -81,9 +81,7 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          command -v mount; ls -l "$(command -v mount)"
-          LIBMOUNT_DEBUG=all mount -t tmpfs tmpfs /mnt 2>&1 | tail -30
-          strace -f -e trace=fsopen,fsconfig,fsmount,move_mount,mount mount -t tmpfs tmpfs /mnt 2>&1 | tail -10
+          LIBMOUNT_FORCE_MOUNT2=always mount -t tmpfs tmpfs /mnt; echo "exit=$?"
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
