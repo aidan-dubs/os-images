@@ -76,10 +76,11 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          id
-          grep -E 'Cap(Eff|Bnd)' /proc/self/status
-          cat /proc/self/uid_map
-          mount -t tmpfs tmpfs /mnt   # does a plain mount work here?
+          grep -E 'Seccomp|NoNewPrivs' /proc/self/status
+          cat /proc/self/attr/current
+          ls /sys/fs/selinux 2>/dev/null | head -3
+          mount -t tmpfs tmpfs /mnt; echo "exit=$?"
+          unshare -m mount -t tmpfs tmpfs /mnt; echo "unshare exit=$?"
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
