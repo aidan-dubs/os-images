@@ -75,6 +75,11 @@ jobs:
             --authfile "$AUTH_FILE" \
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
+      - run: |
+          id
+          grep -E 'Cap(Eff|Bnd)' /proc/self/status
+          cat /proc/self/uid_map
+          mount -t tmpfs tmpfs /mnt   # does a plain mount work here?
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
