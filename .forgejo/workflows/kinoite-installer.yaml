@@ -53,6 +53,7 @@ jobs:
     runs-on: runner
     container:
       image: ci-buildah:latest
+      options: --user root
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
