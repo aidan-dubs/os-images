@@ -81,13 +81,11 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          mount --version
-          python3 - <<'EOF'
-          import ctypes, os
-          libc = ctypes.CDLL(None, use_errno=True)
-          r = libc.mount(b"tmpfs", b"/mnt", b"tmpfs", 0, None)
-          print("ret", r, "errno", ctypes.get_errno(), os.strerror(ctypes.get_errno()))
-          EOF
+          grep -E '^(Uid|Gid|CapInh|CapPrm|CapAmb)' /proc/self/status
+          which -a mount
+          ls -l $(which mount)
+          env | grep -i -E 'libmount|^USER|^HOME|^LOGNAME'
+          LIBMOUNT_DEBUG=all mount -t tmpfs tmpfs /mnt 2>&1 | tail -30
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
