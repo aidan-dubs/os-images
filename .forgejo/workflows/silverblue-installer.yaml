@@ -76,6 +76,7 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
+          sleep 100
           grep -E 'Seccomp|NoNewPrivs' /proc/self/status
           cat /proc/self/attr/current
           ls /sys/fs/selinux 2>/dev/null | head -3
