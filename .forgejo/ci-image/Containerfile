@@ -1,5 +1,5 @@
 FROM quay.io/containers/buildah:v1.43
-RUN dnf install -y nodejs git yq
+RUN dnf install -y nodejs git yq image-builder
 COPY ./storage.conf /etc/containers/storage.conf
 
 
