@@ -81,7 +81,9 @@ jobs:
             --username "$OWNER" \
             --password-stdin "$REGISTRY"
       - run: |
-          LIBMOUNT_FORCE_MOUNT2=always mount -t tmpfs tmpfs /mnt; echo "exit=$?"
+          ls -ln /usr/bin/mount
+          find /usr/bin /usr/sbin -xdev -user 1008192 2>/dev/null | head
+          chown root:root /usr/bin/mount && mount -t tmpfs tmpfs /mnt; echo "exit=$?"
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
