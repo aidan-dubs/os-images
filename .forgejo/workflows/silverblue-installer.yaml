@@ -53,7 +53,12 @@ jobs:
     runs-on: runner
     container:
       image: ci-buildah:latest
-      options: --user root
+      options: >
+        --user root
+        --userns=host
+        --security-opt seccomp=unconfined
+        --security-opt label=disable
+        --cap-add=ALL
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
