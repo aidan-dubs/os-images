@@ -13,6 +13,7 @@ jobs:
       image: ci-buildah:latest
     env:
       SERVER_URL: ${{ forgejo.server_url }}
+      REGISTRY: ${{ vars.REGISTRY }}
       OWNER: ${{ forgejo.repository_owner }}
       BUILDAH_ISOLATION: chroot
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -22,14 +23,9 @@ jobs:
       UPDATE_AUTHFILE: ./update-auth.json
     steps:
       - uses: actions/checkout@v7
-      - run: |
-          REGISTRY="${SERVER_URL#*://}"
-          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
-          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
-          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
       - run: >
           buildah login "$REGISTRY"
-          --username "$OWNER" --password "$BOT_TOKEN"
+          --username "$BOT_USER" --password "$BOT_TOKEN"
       - run: >
           yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))'
           ./fedora-silverblue/config.yaml > ./fedora-silverblue/argfile.conf
@@ -38,7 +34,7 @@ jobs:
           printf '{}\n' > "$UPDATE_AUTHFILE"
           printf '%s' "$UPDATE_TOKEN" | buildah login \
             --authfile "$UPDATE_AUTHFILE" \
-            --username "$OWNER" \
+            --username "$BOT_USER" \
             --password-stdin "$REGISTRY"
         env:
           UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
@@ -56,7 +52,7 @@ jobs:
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
       - run: >
           cosign login "$REGISTRY"
-          --username "$OWNER" --password "$BOT_TOKEN"
+          --username "$BOT_USER" --password "$BOT_TOKEN"
       - run: >
           cosign sign --yes
           --key env://COSIGN_PRIVATE_KEY
