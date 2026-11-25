@@ -1,0 +1,36 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".forgejo/ci-image-builder/**"
+      - ".forgejo/workflows/ci-image-builder-build.yaml"
+jobs:
+  build-env:
+    runs-on: runner
+    container:
+      image: ${{ var.CI_IMAGE }}
+    env:
+      REGISTRY: ${{ vars.REGISTRY }}
+      OWNER: ${{ vars.OWNER }}
+      BOT_USER: ${{ vars.BOT_USER }}
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      IMAGE_NAME: ci-buildah
+      BUILDAH_ISOLATION: chroot
+    steps:
+      - run: >
+          buildah login "$REGISTRY"
+          --username "$BOT_USER" --password "$BOT_TOKEN"
+      - run: dnf install -y git nodejs
+      - uses: actions/checkout@v7
+      - run: >
+          buildah build
+          --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          -f .forgejo/ci-image-builder/Containerfile
+          .forgejo/ci-image-builder
+      - run: >
+          buildah push --digestfile ./digest
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
