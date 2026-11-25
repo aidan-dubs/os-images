@@ -18,6 +18,7 @@ jobs:
       BUILDAH_ISOLATION: chroot
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      BOT_USER: ${{ vars.BOT_USER }}
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       IMAGE_NAME: silverblue
       UPDATE_AUTHFILE: ./update-auth.json
