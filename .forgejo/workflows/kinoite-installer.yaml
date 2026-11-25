@@ -10,7 +10,7 @@ jobs:
   kinoite-installer-build:
     runs-on: runner
     container:
-      image: ci-buildah:latest
+      image: ${{ vars.CI_IMAGE }}
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
