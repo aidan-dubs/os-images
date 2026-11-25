@@ -1,6 +1,6 @@
 FROM quay.io/containers/buildah:v1.46
 
-RUN dnf install -y nodejs git yq && dnf clean all && rm -rf /var/cache/libdnf5/*
+RUN sudo dnf remove fuse-overlayfs && dnf install -y nodejs git yq && dnf clean all && rm -rf /var/cache/libdnf5/*
 
 # Image builder tries to chcon even when it doesn't need to
 # RUN printf '#!/bin/sh\nexit 0\n' > /usr/bin/chcon && chmod +x /usr/bin/chcon
@@ -14,7 +14,7 @@ RUN mkdir -p /etc/containers/storage.rootful.conf.d && \
     echo 'additionalimagestores = ["/usr/lib/containers/storage","/var/lib/shared"]' >> /etc/containers/storage.rootful.conf.d/20-image_build.conf && \
     echo '[storage.options.overlay]' >> /etc/containers/storage.rootful.conf.d/20-image_build.conf && \
     echo 'mount_program = ""' >> /etc/containers/storage.rootful.conf.d/20-image_build.conf && \
-    echo 'mountopt = ""' >> /etc/containers/storage.rootful.conf.d/20-image_build.conf
+    echo 'mountopt = "nodev,metacopy=on"' >> /etc/containers/storage.rootful.conf.d/20-image_build.conf
 
 # Create modified configurations for the unprivileged user.
 RUN mkdir -p /etc/containers/storage.rootless.conf.d && \
@@ -24,7 +24,7 @@ RUN mkdir -p /etc/containers/storage.rootless.conf.d && \
     echo 'additionalimagestores = ["/var/lib/shared"]' >> /etc/containers/storage.rootless.conf.d/20-image_build.conf && \
     echo '[storage.options.overlay]' >> /etc/containers/storage.rootless.conf.d/20-image_build.conf && \
     echo 'mount_program = ""' >> /etc/containers/storage.rootless.conf.d/20-image_build.conf && \
-    echo 'mountopt = ""' >> /etc/containers/storage.rootless.conf.d/20-image_build.conf
+    echo 'mountopt = "nodev,metacopy=on"' >> /etc/containers/storage.rootless.conf.d/20-image_build.conf
 
 RUN set -eux; \
     LATEST_VERSION="$(curl -fsSL https://api.github.com/repos/sigstore/cosign/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/^v//')"; \
