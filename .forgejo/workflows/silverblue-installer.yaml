@@ -89,7 +89,6 @@ jobs:
           --output-dir "$OUTPUT_DIR"
           --output-name "$IMAGE_NAME"
           --bootc-ref "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
-          --bootc-default-fs btrfs
           --bootc-pull-container
       - run: |
           ISO_COUNT="$(find "$OUTPUT_DIR" -type f -name '*.iso' | wc -l)"
