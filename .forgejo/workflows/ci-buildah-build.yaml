@@ -14,13 +14,12 @@ jobs:
       BUILDAH_ISOLATION: chroot
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       IMAGE_NAME: ci-buildah
-      CACHE_REPO: "${IMAGE_NAME}/cache"
     steps:
       - run: dnf install -y git nodejs
       - uses: actions/checkout@v7
       - run: >
           buildah login "$REGISTRY"
-          --username "$OWNER" --password "$BOT_TOKEN"
+          --username "$BOT_USER" --password "$BOT_TOKEN"
       - run: >
           buildah build
           --layers
