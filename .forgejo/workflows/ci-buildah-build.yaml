@@ -3,7 +3,7 @@ on:
     branches:
       - main
     paths:
-      - ".forgejo/ci-image/**"
+      - ".forgejo/ci-buildah/**"
       - ".forgejo/workflows/ci-buildah-build.yaml"
 jobs:
   build-env:
