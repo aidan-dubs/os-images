@@ -10,11 +10,25 @@ jobs:
     runs-on: runner
     container:
       image: quay.io/containers/buildah:v1.43
+    env:
+      BUILDAH_ISOLATION: chroot
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      IMAGE_NAME: ci-buildah
+      CACHE_REPO: "${IMAGE_NAME}/cache"
     steps:
       - run: dnf install -y git nodejs
       - uses: actions/checkout@v7
       - run: >
+          buildah login "$REGISTRY"
+          --username "$OWNER" --password "$BOT_TOKEN"
+      - run: >
           buildah build
-          -t ci-buildah:latest
+          --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
           -f .forgejo/ci-image/Containerfile
           .forgejo/ci-image
+      - run: >
+          buildah push --digestfile ./digest
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest"

@@ -1,4 +1,4 @@
-FROM quay.io/containers/buildah:latest
+FROM quay.io/containers/buildah:v1.46
 USER root
 
 RUN dnf install -y nodejs git yq image-builder && dnf clean all && rm -rf /var/cache/libdnf5/*
