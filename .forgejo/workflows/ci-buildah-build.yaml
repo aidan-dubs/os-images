@@ -30,8 +30,8 @@ jobs:
           --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
-          -f .forgejo/ci-image/Containerfile
-          .forgejo/ci-image
+          -f .forgejo/ci-buildah/Containerfile
+          .forgejo/ci-buildah
       - run: >
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
