@@ -11,15 +11,18 @@ jobs:
     container:
       image: quay.io/containers/buildah:v1.43
     env:
-      BUILDAH_ISOLATION: chroot
+      REGISTRY: ${{ vars.REGISTRY }}
+      OWNER: ${{ vars.OWNER }}
+      BOT_USER: ${{ vars.BOT_USER }}
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       IMAGE_NAME: ci-buildah
+      BUILDAH_ISOLATION: chroot
     steps:
-      - run: dnf install -y git nodejs
-      - uses: actions/checkout@v7
       - run: >
           buildah login "$REGISTRY"
           --username "$BOT_USER" --password "$BOT_TOKEN"
+      - run: dnf install -y git nodejs
+      - uses: actions/checkout@v7
       - run: >
           buildah build
           --layers
