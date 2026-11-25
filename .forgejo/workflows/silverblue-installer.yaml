@@ -50,7 +50,7 @@ jobs:
     needs: silverblue-installer-build
     runs-on: runner
     container:
-      image: ci-buildah:latest
+      image: ${{vars.CI_IMAGE_BUILDER }}
       options: >
         --user root
         --userns=host
@@ -75,10 +75,6 @@ jobs:
             --authfile "$AUTH_FILE" \
             --username "$BOT_USER" \
             --password-stdin "$REGISTRY"
-      - run: |
-          ls -ln /usr/bin/mount
-          find /usr/bin /usr/sbin -xdev -user 1008192 2>/dev/null | head
-          chown root:root /usr/bin/mount && mount -t tmpfs tmpfs /mnt; echo "exit=$?"
       - run: >
           image-builder build bootc-generic-iso
           --output-dir "$OUTPUT_DIR"
@@ -95,6 +91,6 @@ jobs:
           ISO_PATH="$(find "$OUTPUT_DIR" -type f -name '*.iso' -print -quit)"
           PACKAGE_VERSION="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
           curl --fail-with-body --show-error --silent \
-            --user "$OWNER:$BOT_TOKEN" \
+            --user "$BOT_USER:$BOT_TOKEN" \
             --upload-file "$ISO_PATH" \
             "${SERVER_URL%/}/api/packages/$OWNER/generic/$IMAGE_NAME/$PACKAGE_VERSION/$(basename "$ISO_PATH")"
