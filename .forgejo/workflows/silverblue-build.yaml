@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: runner
     container:
-      image: ci-buildah:latest
+      image: ${{ vars.CI_IMAGE }}
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       REGISTRY: ${{ vars.REGISTRY }}
@@ -57,7 +57,8 @@ jobs:
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
       - run: >
           cosign login "$REGISTRY"
-          --username "$BOT_USER" --password "$BOT_TOKEN"
+          --username "$BOT_USER"
+          --password "$BOT_TOKEN"
       - run: >
           cosign sign --yes
           --key env://COSIGN_PRIVATE_KEY
