@@ -41,6 +41,8 @@ jobs:
           UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
       - run: >
           buildah build --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --build-context cosign=./cosign/
           --build-arg "REGISTRY=$REGISTRY"
           --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
