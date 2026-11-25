@@ -9,7 +9,7 @@ jobs:
   build-env:
     runs-on: runner
     container:
-      image: ${{ var.CI_IMAGE }}
+      image: ${{ vars.CI_IMAGE }}
     env:
       REGISTRY: ${{ vars.REGISTRY }}
       OWNER: ${{ vars.OWNER }}
@@ -21,7 +21,6 @@ jobs:
       - run: >
           buildah login "$REGISTRY"
           --username "$BOT_USER" --password "$BOT_TOKEN"
-      - run: dnf install -y git nodejs
       - uses: actions/checkout@v7
       - run: >
           buildah build
