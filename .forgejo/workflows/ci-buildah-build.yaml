@@ -10,7 +10,6 @@ jobs:
     runs-on: runner
     container:
       image: ${{ CI_IMAGE }}
-      # image: quay.io/containers/buildah:v1.43 # Only needed for bootstrapping
     env:
       REGISTRY: ${{ vars.REGISTRY }}
       OWNER: ${{ vars.OWNER }}
@@ -22,7 +21,6 @@ jobs:
       - run: >
           buildah login "$REGISTRY"
           --username "$BOT_USER" --password "$BOT_TOKEN"
-      # - run: dnf install -y git nodejs # Only needed for bootstrapping
       - uses: actions/checkout@v7
       - run: >
           buildah build
