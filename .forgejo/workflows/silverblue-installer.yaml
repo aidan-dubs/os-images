@@ -10,24 +10,20 @@ jobs:
   silverblue-installer-build:
     runs-on: runner
     container:
-      image: ci-buildah:latest
+      image: ${{ vars.CI_IMAGE }}
     env:
-      SERVER_URL: ${{ forgejo.server_url }}
-      OWNER: ${{ forgejo.repository_owner }}
-      BUILDAH_ISOLATION: chroot
+      REGISTRY: ${{ vars.REGISTRY }}
+      OWNER: ${{ vars.OWNER }}
+      BOT_USER: ${{ vars.BOT_USER }}
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       IMAGE_NAME: silverblue-installer
+      BUILDAH_ISOLATION: chroot
       UPDATE_AUTHFILE: ./update-auth.json
     steps:
       - uses: actions/checkout@v7
-      - run: |
-          REGISTRY="${SERVER_URL#*://}"
-          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
-          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
-          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
       - run: >
           buildah login "$REGISTRY"
-          --username "$OWNER"
+          --username "$BOT_USER"
           --password "$BOT_TOKEN"
       - run: |
           printf '{}\n' > "$UPDATE_AUTHFILE"
@@ -40,6 +36,8 @@ jobs:
       - run: >
           buildah build
           --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --build-context cosign=./cosign/
           --build-arg "TARGET=$REGISTRY/$OWNER/silverblue:latest"
           --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
@@ -60,8 +58,6 @@ jobs:
         --security-opt label=disable
         --cap-add=ALL
     env:
-      SERVER_URL: ${{ forgejo.server_url }}
-      OWNER: ${{ forgejo.repository_owner }}
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       IMAGE_NAME: silverblue-installer
       AUTH_FILE: ./registry-auth.json
@@ -69,11 +65,6 @@ jobs:
       OUTPUT_DIR: ./iso-output
     steps:
       - uses: actions/checkout@v7
-      - run: |
-          REGISTRY="${SERVER_URL#*://}"
-          OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
-          echo "OWNER=$OWNER" >> "$FORGEJO_ENV"
-          echo "REGISTRY=$REGISTRY" >> "$FORGEJO_ENV"
       - run: |
           printf '{}\n' > "$AUTH_FILE"
           printf '%s' "$BOT_TOKEN" | podman login \
