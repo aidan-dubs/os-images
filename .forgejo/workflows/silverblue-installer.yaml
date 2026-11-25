@@ -52,7 +52,6 @@ jobs:
     container:
       image: ${{vars.CI_IMAGE_BUILDER }}
       options: >
-        --user root
         --userns=host
         --security-opt seccomp=unconfined
         --security-opt label=disable
