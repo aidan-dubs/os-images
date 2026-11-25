@@ -15,7 +15,7 @@ jobs:
       OWNER: ${{ vars.OWNER }}
       BOT_USER: ${{ vars.BOT_USER }}
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      IMAGE_NAME: ci-buildah
+      IMAGE_NAME: ci-image-builder
       BUILDAH_ISOLATION: chroot
     steps:
       - run: >
