@@ -92,6 +92,8 @@ RUN --mount=type=cache,dst=/var/cache/ \
 
 
 RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/htop.desktop
+RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/java-25-openjdk-jconsole.desktop
+RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applications/java-latest-openjdk-jconsole.desktop
 
 ARG DNF_LATEX 
 
