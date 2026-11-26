@@ -93,4 +93,3 @@ jobs:
           cosign verify
           --key cosign/cosign.pub
           "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia@$(cat ./nvidia-digest)"
-        env:
