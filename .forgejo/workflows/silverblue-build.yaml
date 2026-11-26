@@ -58,7 +58,7 @@ jobs:
       - run: >
           KVER=$(buildah inspect --format
           '{{index .OCIv1.Config.Labels "ostree.linux"}}'
-          "$REGISTRY/$OWNER/$IMAGE_NAME:latest")
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest") ;
           buildah build --layers
           --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
