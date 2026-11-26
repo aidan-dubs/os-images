@@ -71,3 +71,9 @@ bootstrap-iot:
 
 # Tear down any old VM, rebuild everything, and relaunch
 rebuild: destroy build disk vm
+
+
+lint:
+    forgejo-runner validate --directory ./
+    find ./ -type f -name "*Containerfile" -exec hadolint {} \;
+    
