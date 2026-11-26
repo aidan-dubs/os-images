@@ -102,6 +102,13 @@ RUN --mount=type=cache,dst=/var/cache/ \
         --setopt=tsflags=nodocs \
          $DNF_LATEX
 
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS \
+        netbird netbird-ui network-manager-netbird || true  && \
+    rpm -q netbird netbird-ui network-manager-netbird
+
 # RUN --mount=type=cache,dst=/var/cache/ \
 #     --mount=type=cache,dst=/var/cache/libdnf5 \
 #     --mount=type=cache,dst=/var/log \
