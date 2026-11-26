@@ -56,7 +56,7 @@ jobs:
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
       - run: >
-          KER_VER=$(buildah inspect --format
+          KVER=$(buildah inspect --format
           '{{index .OCIv1.Config.Labels "ostree.linux"}}'
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest")
           buildah build --layers
