@@ -47,7 +47,7 @@ RUN --mount=type=cache,dst=/var/cache \
       --set=baseurl=https://pkgs.netbird.io/yum/ \
       --set=enabled=1 \
       --set=gpgcheck=1 \
-      --set=rep_gpgcheck=1 \
+      --set=repo_gpgcheck=1 \
       --set=gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
 
 # RUN --mount=type=cache,dst=/var/cache/ \
