@@ -27,11 +27,11 @@ RUN --mount=type=cache,dst=/var/cache/ \
         --exclude=PackageKit-gstreamer-plugin \
         @multimedia
 
-RUN --mount=type=cache,dst=/var/cache/ \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
-    --mount=type=cache,dst=/var/log \
-    dnf5 install $DNF_ARGS mesa-va-drivers-freeworld && \
-    dnf5 swap $DNF_ARGS mesa-vulkan-drivers{,-freeworld}
+# RUN --mount=type=cache,dst=/var/cache/ \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     --mount=type=cache,dst=/var/log \
+#     dnf5 install $DNF_ARGS mesa-va-drivers-freeworld && \
+#     dnf5 swap $DNF_ARGS mesa-vulkan-drivers{,-freeworld}
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
