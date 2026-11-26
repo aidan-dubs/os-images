@@ -133,7 +133,10 @@ dnf:
     - libuv-devel
     # Installed from additional repos
     - code
-    - tailscale
+    # - tailscale
+    - netbird
+    - netbird-ui
+    - network-manager-netbird
   latex:
     - texlive-scheme-basic
     - pandoc

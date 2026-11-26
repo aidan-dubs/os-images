@@ -27,7 +27,40 @@ RUN --mount=type=cache,dst=/var/cache \
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
-    rpm --import https://packages.microsoft.com/keys/microsoft.asc && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+    sudo dnf $DNF_ARGS config-manager addrepo \
+      --id=code \
+      --save-filename=vscode \
+      --set=name="Visual Studio Code" \
+      --set=baseurl=https://packages.microsoft.com/yumrepos/vscode \
+      --set=enabled=1 \
+      --set=gpgcheck=1 \
+      --set=gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+
+
+
+RUN --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+    sudo dnf $DNF_ARGS config-manager addrepo \
+      --id=code \
+      --save-filename=vscode \
+      --set=name="Visual Studio Code" \
+      --set=baseurl=https://packages.microsoft.com/yumrepos/vscode \
+      --set=enabled=1 \
+      --set=gpgcheck=1 \
+      --set=gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
+
+sudo tee /etc/yum.repos.d/netbird.repo <<EOF
+[netbird]
+name=netbird
+baseurl=https://pkgs.netbird.io/yum/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+EOF
+
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
