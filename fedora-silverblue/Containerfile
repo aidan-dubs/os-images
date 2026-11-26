@@ -219,13 +219,7 @@ RUN --mount=type=cache,dst=/var/cache/ \
     dnf5 install $DNF_ARGS \
          akmod-nvidia \
          xorg-x11-drv-nvidia-cuda \
-         xorg-x11-drv-nvidia-cuda-libs \
-         xorg-x11-drv-nvidia-libs.i686 \
-         libva-nvidia-driver \
-         xorg-x11-drv-nvidia-power \
-         libva-utils \
-         vdpauinfo \
-         vulkan
+         xorg-x11-drv-nvidia-cuda-libs
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
