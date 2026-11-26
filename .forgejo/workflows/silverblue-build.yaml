@@ -56,6 +56,24 @@ jobs:
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
       - run: >
+          buildah build --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --build-context cosign=./cosign/
+          --build-arg "REGISTRY=$REGISTRY"
+          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          --build-arg-file ./fedora-silverblue/argfile.conf
+          --target nvidia -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          -f Containerfile ./fedora-silverblue/
+        env:
+          IMAGE_NAME: silverblue-nvidia
+      - run: >
+          buildah push --digestfile ./nvidia-digest
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+        env:
+          IMAGE_NAME: silverblue-nvidia
+      - run: >
           cosign login "$REGISTRY"
           --username "$BOT_USER"
           --password "$BOT_TOKEN"
@@ -67,3 +85,15 @@ jobs:
           cosign verify
           --key cosign/cosign.pub
           "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./digest)"
+      - run: >
+          cosign sign --yes
+          --key env://COSIGN_PRIVATE_KEY
+          "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./nvidia-digest)"
+        env:
+          IMAGE_NAME: silverblue-nvidia
+      - run: >
+          cosign verify
+          --key cosign/cosign.pub
+          "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./nvidia-digest)"
+        env:
+          IMAGE_NAME: silverblue-nvidia
