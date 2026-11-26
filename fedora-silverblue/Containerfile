@@ -213,17 +213,18 @@ RUN bootc container lint
 
 FROM base AS nvidia
 
+ARG KVER
+
+ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
+
+COPY --from=ghcr.io/ublue-os/akmods-nvidia:main-45-${KVER} / /tmp/rpms
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
-    KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}')" && \
-    dnf5 install $DNF_ARGS --setopt=tsflags=noscripts akmod-nvidia xorg-x11-drv-nvidia-cuda  "kernel-devel-${KVER}" && \
-    akmods --force --kernels "${KVER}" && \
-    modinfo -k "${KVER}" nvidia > /dev/null && \
-    dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f "/usr/lib/modules/${KVER}/initramfs.img"
-
-
+    dnf5 install $DNF_ARGS \
+    /tmp/rpms/ublue-os/ublue-os-nvidia*.rpm \
+    /tmp/rpms/kmods/kmod-nvidia*.rpm
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
