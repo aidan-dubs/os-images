@@ -217,7 +217,7 @@ ARG KVER
 
 ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
 
-COPY --from=ghcr.io/ublue-os/akmods-nvidia:main-45-${KVER} / /tmp/rpms
+COPY --from=ghcr.io/ublue-os/akmods-nvidia-open:main-45-${KVER} / /tmp/rpms
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
