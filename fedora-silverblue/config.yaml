@@ -162,6 +162,7 @@ flatpaks:
   - com.todoist.Todoist
   - io.github.diegopvlk.Cine
   - io.github.finefindus.Hieroglyphic
+  - io.github.kolunmi.Bazaar
   - md.obsidian.Obsidian
   - net.ankiweb.Anki
   - net.nokyan.Resources
@@ -170,3 +171,6 @@ flatpaks:
   - org.gimp.GIMP
   - org.gnome.Fractal
   - org.inkscape.Inkscape
+  - org.kde.krita
+  - org.signal.Signal
+  - us.zoom.Zoom
