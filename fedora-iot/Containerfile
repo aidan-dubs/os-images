@@ -81,3 +81,69 @@ EOF
 run cat /etc/containers/registries.d/forgejo.yaml
 
 RUN bootc container lint
+
+FROM base AS nvidia
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}')" && \
+    dnf5 install $DNF_ARGS --setopt=tsflags=noscripts akmod-nvidia xorg-x11-drv-nvidia-cuda  "kernel-devel-${KVER}" && \
+    akmods --force --kernels "${KVER}" && \
+    modinfo -k "${KVER}" nvidia > /dev/null && \
+    dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f "/usr/lib/modules/${KVER}/initramfs.img"
+
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 config-manager addrepo $DNF_ARGS \
+    --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS \
+        nvidia-container-toolkit \
+        nvidia-container-toolkit-base \
+        libnvidia-container-tools \
+        libnvidia-container1
+
+RUN install -Dm644 /dev/stdin /usr/lib/bootc/kargs.d/00-nvidia.toml <<'EOF'
+kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1" , "nvidia-drm.fbdev=1"]
+EOF
+
+RUN bootc container lint
+
+FROM base AS nvidia-legacy
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}')" && \
+    dnf5 install $DNF_ARGS --setopt=tsflags=noscripts akmod-nvidia-580xx xorg-x11-drv-nvidia-cuda-580xx  "kernel-devel-${KVER}" && \
+    akmods --force --kernels "${KVER}" && \
+    modinfo -k "${KVER}" nvidia > /dev/null && \
+    dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f "/usr/lib/modules/${KVER}/initramfs.img"
+
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 config-manager addrepo $DNF_ARGS \
+    --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
+
+RUN --mount=type=cache,dst=/var/cache/ \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/log \
+    dnf5 install $DNF_ARGS \
+        nvidia-container-toolkit \
+        nvidia-container-toolkit-base \
+        libnvidia-container-tools \
+        libnvidia-container1
+
+RUN install -Dm644 /dev/stdin /usr/lib/bootc/kargs.d/00-nvidia.toml <<'EOF'
+kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1" , "nvidia-drm.fbdev=1"]
+EOF
+
+RUN bootc container lint

@@ -55,6 +55,45 @@ jobs:
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
       - run: >
+          KVER=$(buildah inspect --format
+          '{{index .OCIv1.Config.Labels "ostree.linux"}}'
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest") ;
+          buildah build --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --build-context cosign=./cosign/
+          --build-context
+          base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:latest
+          --build-arg "REGISTRY=$REGISTRY"
+          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          --build-arg-file ./fedora-iot/argfile.conf
+          --target nvidia -t "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia:latest"
+          -f Containerfile ./fedora-iot/
+      - run: >
+          buildah push --digestfile ./nvidia-digest
+          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia:latest"
+      - run: >
+          KVER=$(buildah inspect --format
+          '{{index .OCIv1.Config.Labels "ostree.linux"}}'
+          "$REGISTRY/$OWNER/$IMAGE_NAME:latest") ;
+          buildah build --layers
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --build-context cosign=./cosign/
+          --build-context
+          base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:latest
+          --build-arg "REGISTRY=$REGISTRY"
+          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          --build-arg-file ./fedora-iot/argfile.conf
+          --target nvidia-legacy
+          -t "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy:latest"
+          -f Containerfile ./fedora-iot/
+      - run: >
+          buildah push --digestfile ./nvidia-legacy-digest
+          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy:latest"
+      - run: >
           cosign login "$REGISTRY"
           --username "$BOT_USER"
           --password "$BOT_TOKEN"
@@ -66,3 +105,19 @@ jobs:
           cosign verify
           --key cosign/cosign.pub
           "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./digest)"
+      - run: >
+          cosign sign --yes
+          --key env://COSIGN_PRIVATE_KEY
+          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia@$(cat ./nvidia-digest)"
+      - run: >
+          cosign verify
+          --key cosign/cosign.pub
+          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia@$(cat ./nvidia-digest)"
+      - run: >
+          cosign sign --yes
+          --key env://COSIGN_PRIVATE_KEY
+          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy@$(cat ./nvidia-digest)"
+      - run: >
+          cosign verify
+          --key cosign/cosign.pub
+          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy@$(cat ./nvidia-digest)"
