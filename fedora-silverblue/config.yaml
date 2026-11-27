@@ -152,6 +152,7 @@ gnome:
     - nowplaying@epogonii.github.io
     - places-menu@gnome-shell-extensions.gcampax.github.com
 flatpaks:
+  - io.github.kolunmi.Bazaar
   - app.drey.Warp
   - ca.desrt.dconf-editor
   - com.bitwarden.desktop
@@ -162,7 +163,6 @@ flatpaks:
   - com.todoist.Todoist
   - io.github.diegopvlk.Cine
   - io.github.finefindus.Hieroglyphic
-  - io.github.kolunmi.Bazaar
   - md.obsidian.Obsidian
   - net.ankiweb.Anki
   - net.nokyan.Resources
@@ -172,5 +172,6 @@ flatpaks:
   - org.gnome.Fractal
   - org.inkscape.Inkscape
   - org.kde.krita
+  - org.prismlauncher.PrismLauncher
   - org.signal.Signal
   - us.zoom.Zoom

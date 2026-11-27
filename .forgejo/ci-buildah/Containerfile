@@ -1,6 +1,6 @@
 FROM quay.io/containers/buildah:v1.46
 
-RUN sudo dnf remove -y fuse-overlayfs && dnf install -y nodejs git yq && dnf clean all && rm -rf /var/cache/libdnf5/*
+RUN dnf remove -y fuse-overlayfs && dnf install -y nodejs git yq && dnf clean all && rm -rf /var/cache/libdnf5/*
 
 # Image builder tries to chcon even when it doesn't need to
 # RUN printf '#!/bin/sh\nexit 0\n' > /usr/bin/chcon && chmod +x /usr/bin/chcon

@@ -76,6 +76,8 @@ dnf:
     - readline-devel
     - bzip2-devel
     - xz-devel
+    - java-latest-openjdk-devel
+    - maven
     - gdb
     - valgrind
     - lldb
@@ -90,6 +92,17 @@ dnf:
     - nodejs
     - nodejs-npm
     - code
-    - tailscale
     - discord
     - steam
+flatpaks:
+  - com.bitwarden.desktop
+  - com.spotify.Client
+  - com.todoist.Todoist
+  - md.obsidian.Obsidian
+  - org.blender.Blender
+  - org.freecad.FreeCAD
+  - org.gimp.GIMP
+  - org.inkscape.Inkscape
+  - org.kde.krita
+  - org.prismlauncher.PrismLauncher
+  - org.signal.Signal

@@ -81,6 +81,19 @@ RUN desktop-file-edit --set-key=NoDisplay --set-value=true /usr/share/applicatio
 #         --setopt=tsflags=nodocs \
 #          $DNF_FROM_URL
 
+COPY --from=common --chmod=0755 flatpak-manager/flatpak-manager.sh /usr/libexec/flatpak-manager.sh
+
+COPY --from=common flatpak-manager/flatpak-manager.service /usr/lib/systemd/system/flatpak-manager.service
+
+
+ARG FLATPAKS
+
+RUN mkdir -p /usr/share/flatpak-manager \
+    && printf '%s\n' $FLATPAKS > /usr/share/flatpak-manager/flatpaks.txt
+
+
+RUN systemctl enable flatpak-manager.service
+
 COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
 
 ARG REGISTRY
