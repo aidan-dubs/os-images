@@ -37,6 +37,8 @@ dnf:
     - zsh
     - ripgrep
     - fd-find
+    - zoxide
+    - eza
     - bat
     - tldr
     # Desktop Integrations
