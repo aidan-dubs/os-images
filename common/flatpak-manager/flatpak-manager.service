@@ -7,7 +7,7 @@ ConditionPathExists=/usr/share/flatpak-manager/flatpaks.txt
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/flatpak-manager
+ExecStart=/usr/libexec/flatpak-manager.sh
 RemainAfterExit=yes
 TimeoutStartSec=infinity
 

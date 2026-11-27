@@ -176,7 +176,7 @@ RUN set -eux; \
     dconf update
 
 
-COPY --from=common flatpak-manager/flatpak-manager.sh /usr/libexec/flatpak-manager.sh
+COPY --from=common --chmod=0755 flatpak-manager/flatpak-manager.sh /usr/libexec/flatpak-manager.sh
 
 COPY --from=common flatpak-manager/flatpak-manager.service /usr/lib/systemd/system/flatpak-manager.service
 
