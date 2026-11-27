@@ -151,3 +151,22 @@ gnome:
     - blur-my-shell@aunetx
     - nowplaying@epogonii.github.io
     - places-menu@gnome-shell-extensions.gcampax.github.com
+flatpaks:
+  - app.drey.Warp
+  - ca.desrt.dconf-editor
+  - com.bitwarden.desktop
+  - com.github.iwalton3.jellyfin-mpv-shim
+  - com.github.tchx84.Flatseal
+  - com.mattjakeman.ExtensionManager
+  - com.spotify.Client
+  - com.todoist.Todoist
+  - io.github.diegopvlk.Cine
+  - io.github.finefindus.Hieroglyphic
+  - md.obsidian.Obsidian
+  - net.ankiweb.Anki
+  - net.nokyan.Resources
+  - org.blender.Blender
+  - org.freecad.FreeCAD
+  - org.gimp.GIMP
+  - org.gnome.Fractal
+  - org.inkscape.Inkscape

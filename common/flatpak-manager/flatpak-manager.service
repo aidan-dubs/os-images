@@ -1,0 +1,15 @@
+[Unit]
+Description=Align system Flatpaks with image
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/usr/share/flatpak-manager/flatpaks.txt
+
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/flatpak-manager
+RemainAfterExit=yes
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target

@@ -175,6 +175,19 @@ RUN set -eux; \
     printf "[org/gnome/shell]\nenabled-extensions=[%s]\n" "$LIST" > /etc/dconf/db/local.d/00-extensions; \
     dconf update
 
+
+COPY --from=common flatpak-manager/flatpak-manager.sh /usr/libexec/flatpak-manager.sh
+
+COPY --from=common flatpak-manager/flatpak-manager.service /usr/lib/systemd/system/flatpak-manager.service
+
+
+ARG FLATPAKS
+
+RUN echo "$FLATPAKS" | tr ' ' '\n' > /usr/share/flatpak-manager/flatpaks.txt
+
+
+RUN systemctl enable flatpak-manager.service
+
 COPY --from=cosign cosign.pub /etc/pki/containers/forgejo.pub
 
 ARG REGISTRY
