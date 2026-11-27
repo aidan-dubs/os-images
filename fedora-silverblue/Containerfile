@@ -183,7 +183,8 @@ COPY --from=common flatpak-manager/flatpak-manager.service /usr/lib/systemd/syst
 
 ARG FLATPAKS
 
-RUN echo "$FLATPAKS" | tr ' ' '\n' > /usr/share/flatpak-manager/flatpaks.txt
+RUN mkdir -p /usr/share/flatpak-manager \
+    && printf '%s\n' $FLATPAKS > /usr/share/flatpak-manager/flatpaks.txt
 
 
 RUN systemctl enable flatpak-manager.service
