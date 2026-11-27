@@ -63,6 +63,7 @@ jobs:
           --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --build-context cosign=./cosign/
+          --build-context common=./common/
           --build-context
           base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:latest
           --build-arg "REGISTRY=$REGISTRY"
