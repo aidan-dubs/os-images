@@ -52,8 +52,7 @@ jobs:
     needs: kinoite-installer-build
     runs-on: runner
     container:
-      image: ci-buildah:latest
-      options: --user root
+      image: ${{ vars.CI_IMAGE_BUILDER }}
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
