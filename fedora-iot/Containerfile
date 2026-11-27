@@ -121,7 +121,7 @@ RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     KVER="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}')" && \
-    dnf5 install $DNF_ARGS --setopt=tsflags=noscripts akmod-nvidia-580xx xorg-x11-drv-nvidia-cuda-580xx  "kernel-devel-${KVER}" && \
+    dnf5 install $DNF_ARGS --setopt=tsflags=noscripts akmod-nvidia-580xx xorg-x11-drv-nvidia-580xx-cuda  "kernel-devel-${KVER}" && \
     akmods --force --kernels "${KVER}" && \
     modinfo -k "${KVER}" nvidia > /dev/null && \
     dracut --no-hostonly --kver "${KVER}" --reproducible --add ostree -f "/usr/lib/modules/${KVER}/initramfs.img"
