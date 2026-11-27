@@ -53,6 +53,11 @@ jobs:
     runs-on: runner
     container:
       image: ${{ vars.CI_IMAGE_BUILDER }}
+      options: >
+        --userns=host
+        --security-opt seccomp=unconfined
+        --security-opt label=disable
+        --cap-add=ALL
     env:
       SERVER_URL: ${{ forgejo.server_url }}
       OWNER: ${{ forgejo.repository_owner }}
