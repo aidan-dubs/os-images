@@ -217,15 +217,14 @@ ARG KVER
 
 ARG DNF_ARGS="--assumeyes --setopt=keepcache=1 --setopt=max_parallel_downloads=20"
 
-COPY --from=ghcr.io/ublue-os/akmods-nvidia-open:main-45-${KVER} / /tmp/rpms
-RUN find /tmp/rpms
+COPY --from=ghcr.io/ublue-os/akmods-nvidia-open:main-45-${KVER} /rpms/kmods /tmp/kmods
+RUN find /tmp/kmods
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     dnf5 install $DNF_ARGS \
-    /tmp/rpms/ublue-os/ublue-os-nvidia*.rpm \
-    /tmp/rpms/kmods/kmod-nvidia*.rpm
+    /tmp/kmods/kmod-nvidia*.rpm
 
 RUN --mount=type=cache,dst=/var/cache/ \
     --mount=type=cache,dst=/var/cache/libdnf5 \

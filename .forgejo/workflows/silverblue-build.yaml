@@ -62,7 +62,8 @@ jobs:
           buildah build --layers
           --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
           --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --build-context cosign=./cosign/
+          --build-context \
+          cosign=./cosign/,base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:latest
           --build-arg "REGISTRY=$REGISTRY"
           --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
           --build-arg "KVER=$KVER"
