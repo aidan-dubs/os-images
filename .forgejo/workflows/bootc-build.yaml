@@ -1,0 +1,129 @@
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Image name"
+        required: true
+      context:
+        description: "Context path"
+        required: true
+      variants:
+        description: "Variants to build (space seperated)"
+        required: false
+        default: ""
+jobs:
+  build:
+    runs-on: runner
+    container:
+      image: ${{ vars.CI_IMAGE }}
+    env:
+      SERVER_URL: ${{ forgejo.server_url }}
+      REGISTRY: ${{ vars.REGISTRY }}
+      OWNER: ${{ forgejo.repository_owner }}
+      BUILDAH_ISOLATION: chroot
+      BOT_USER: ${{ vars.BOT_USER }}
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      IMAGE_NAME: ${{ inputs.image }}
+      CONTEXT: ${{ inputs.context }}
+      TARGET: base
+      VARIANTS: ${{ inputs.variants }}
+      UPDATE_AUTHFILE: ./update-auth.json
+    steps:
+      - uses: actions/checkout@v7
+      - run: >
+          buildah login "$REGISTRY"
+          --username "$BOT_USER" --password "$BOT_TOKEN"
+      - run: >
+          cosign login "$REGISTRY"
+          --username "$BOT_USER" --password "$BOT_TOKEN"
+      - run: >
+          yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))'
+          ./${CONTEXT}/config.yaml > ./${CONTEXT}/argfile.conf
+      - run: cat ./${CONTEXT}/argfile.conf
+      - run: |
+          printf '{}\n' > "$UPDATE_AUTHFILE"
+          printf '%s' "$UPDATE_TOKEN" | buildah login \
+            --authfile "$UPDATE_AUTHFILE" \
+            --username "$BOT_USER" \
+            --password-stdin "$REGISTRY"
+        env:
+          UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
+      - run: >
+          buildah build --layers
+          --skip-unused-stages
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --build-context cosign=./cosign/
+          --build-context common=./common/
+          --build-arg "REGISTRY=$REGISTRY"
+          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          --build-arg-file ./${CONTEXT}/argfile.conf
+          --target $TARGET -t "$REGISTRY/$OWNER/$IMAGE_NAME:unchunked"
+          -f Containerfile ./${CONTEXT}/
+      - run: >
+          KVER=$(buildah inspect --format
+          '{{index .OCIv1.Config.Labels "ostree.linux"}}'
+          "$REGISTRY/$OWNER/$IMAGE_NAME:unchunked") ;
+          for VAR in $VARIANTS; do
+          buildah build --layers
+          --pull=never
+          --skip-unused-stages
+          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
+          --build-context cosign=./cosign/
+          --build-context common=./common/
+          --build-context
+          base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:unchunked
+          --build-arg "REGISTRY=$REGISTRY"
+          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME-$VAR"
+          --build-arg "KVER=$KVER"
+          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
+          --build-arg-file ./${CONTEXT}/argfile.conf
+          --target $VAR -t "$REGISTRY/$OWNER/$IMAGE_NAME-$VAR:unchunked"
+          -f Containerfile ./${CONTEXT}/ ;
+          done;
+      - run: >
+          for VAR in "" $VARIANTS; do
+          buildah build --skip-unused-stages=false
+          --from "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}:unchunked"
+          --build-arg CHUNKAH_CONFIG_STR="$(podman inspect $REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}:unchunked)"
+          --build-arg CHUNKAH_ARGS="--prune /sysroot/ --prune /run/"
+          --unsetlabel ostree.commit
+          --unsetlabel ostree.final-diffid
+          --label containers.bootc=1
+          --label ostree.bootable=true
+          -t "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}:latest"
+          https://github.com/coreos/chunkah/releases/download/v0.7.1/Containerfile.splitter ;
+          done;
+      - run: >
+          for VAR in "" $VARIANTS; do
+            buildah push --digestfile ./digest${VAR:+-$VAR}
+            --compression-level 5
+            --compression-format zstd:chunked
+            "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}:latest";
+          done;
+      - run: |
+          for VAR in "" $VARIANTS; do
+              DIGEST=$(cat ./digest${VAR:+-$VAR})
+              REPO="$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}"
+              STAMP=$(date -u +%Y%m%d-%H%M%S)
+              skopeo copy --preserve-digests \
+              "docker://$REPO@$DIGEST" "docker://$REPO:$STAMP"
+          done;
+      - run: >
+          for VAR in "" $VARIANTS; do
+          cosign sign --yes
+          --key env://COSIGN_PRIVATE_KEY
+          "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}@$(cat ./digest${VAR:+-$VAR})";
+          done;
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - run: >
+          for VAR in "" $VARIANTS; do
+          cosign verify
+          --key cosign/cosign.pub
+          "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}@$(cat ./digest${VAR:+-$VAR})";
+          done;
