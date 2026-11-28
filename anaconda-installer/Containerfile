@@ -67,6 +67,11 @@ RUN echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/p
     echo "install::14438:0:99999:7:::" >> /etc/shadow && \
     passwd -d root
 
+RUN . /etc/os-release && \
+    printf '[Main]\nProduct=%s\nVersion=%s\nBugURL=%s\nIsFinal=True\nUUID=%s.%s\n\n[Compose]\nLorax=custom\n' \
+    "$NAME" "$VERSION_ID" "${BUG_REPORT_URL:-}" "$(date +%Y%m%d%H%M)" "$(uname -m)" \
+    > /.buildstamp
+
 RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives && \
     mv /etc/yum.repos.d /etc/anaconda.repos.d && \
     ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target && \
