@@ -101,11 +101,11 @@ jobs:
           done;
       - run: >
           for VAR in "" $VARIANTS; do
-            buildah push --digestfile ./digest${VAR:+-$VAR}
-            --compression-level 5
-            --compression-format zstd:chunked
-            "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}:latest";
-          done;
+          buildah push --digestfile ./digest${VAR:+-$VAR}
+          --compression-level 5
+          --compression-format zstd:chunked
+          "$REGISTRY/$OWNER/$IMAGE_NAME${VAR:+-$VAR}:latest";
+        done;
       - run: |
           for VAR in "" $VARIANTS; do
               DIGEST=$(cat ./digest${VAR:+-$VAR})
