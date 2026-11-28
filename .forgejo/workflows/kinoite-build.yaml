@@ -52,8 +52,16 @@ jobs:
           --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
           --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
           --build-arg-file ./fedora-kinoite/argfile.conf
-          --target base -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          --target base -t "$REGISTRY/$OWNER/$IMAGE_NAME:unchunked"
           -f Containerfile ./fedora-kinoite/
+      - run: >
+          buildah build --skip-unused-stages=false
+          --format oci
+          --from "$REGISTRY/$OWNER/$IMAGE_NAME:unchunked"
+          --build-arg CHUNKAH_CONFIG_STR="$(skopeo inspect
+          --config "containers-storage:$REGISTRY/$OWNER/$IMAGE_NAME:unchunked")"
+          -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
+          https://github.com/coreos/chunkah/releases/download/v0.7.1/Containerfile.splitter
       - run: >
           buildah push --digestfile ./digest
           "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
