@@ -10,7 +10,7 @@ on:
       - "cosign/**"
 jobs:
   build:
-    uses: ./.forgejo/
+    uses: ./.forgejo/workflows/bootc-build.yaml
     with:
       image: silverblue
       context: fedora-silverblue
