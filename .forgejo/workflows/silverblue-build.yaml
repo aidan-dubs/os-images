@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     uses: ./.forgejo/workflows/bootc-build.yaml
+    secrets: inherit
     with:
       image: silverblue
       context: fedora-silverblue
