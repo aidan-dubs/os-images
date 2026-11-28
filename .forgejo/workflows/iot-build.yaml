@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 8 * * *"
   push:
@@ -8,116 +9,12 @@ on:
       - "fedora-iot/**"
       - "cosign/**"
       - ".forgejo/workflows/iot-build.yaml"
+      - ".forgejo/workflows/bootc-build.yaml"
 jobs:
   build:
-    runs-on: runner
-    container:
-      image: ${{ vars.CI_IMAGE }}
-    env:
-      SERVER_URL: ${{ forgejo.server_url }}
-      REGISTRY: ${{ vars.REGISTRY }}
-      OWNER: ${{ forgejo.repository_owner }}
-      BUILDAH_ISOLATION: chroot
-      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      BOT_USER: ${{ vars.BOT_USER }}
-      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      IMAGE_NAME: iot
-      UPDATE_AUTHFILE: ./update-auth.json
-    steps:
-      - uses: actions/checkout@v7
-      - run: >
-          buildah login "$REGISTRY"
-          --username "$BOT_TOKEN" --password "$BOT_TOKEN"
-      - run: >
-          yq '.. | select(kind == "seq") | (path | join("_") | upcase) + "=" + (join(" "))'
-          ./fedora-iot/config.yaml > ./fedora-iot/argfile.conf
-      - run: |
-          printf '{}\n' > "$UPDATE_AUTHFILE"
-          printf '%s' "$UPDATE_TOKEN" | buildah login \
-            --authfile "$UPDATE_AUTHFILE" \
-            --username "$BOT_USER" \
-            --password-stdin "$REGISTRY"
-        env:
-          UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
-      - run: >
-          buildah build --layers
-          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --build-context cosign=./cosign/
-          --build-arg "REGISTRY=$REGISTRY"
-          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
-          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
-          --build-arg-file ./fedora-iot/argfile.conf
-          --target base -t "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
-          -f Containerfile ./fedora-iot/
-      - run: >
-          buildah push --digestfile ./digest
-          "$REGISTRY/$OWNER/$IMAGE_NAME:latest"
-      - run: >
-          KVER=$(buildah inspect --format
-          '{{index .OCIv1.Config.Labels "ostree.linux"}}'
-          "$REGISTRY/$OWNER/$IMAGE_NAME:latest") ;
-          buildah build --layers
-          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --build-context cosign=./cosign/
-          --build-context
-          base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:latest
-          --build-arg "REGISTRY=$REGISTRY"
-          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
-          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
-          --build-arg-file ./fedora-iot/argfile.conf
-          --target nvidia -t "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia:latest"
-          -f Containerfile ./fedora-iot/
-      - run: >
-          buildah push --digestfile ./nvidia-digest
-          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia:latest"
-      - run: >
-          KVER=$(buildah inspect --format
-          '{{index .OCIv1.Config.Labels "ostree.linux"}}'
-          "$REGISTRY/$OWNER/$IMAGE_NAME:latest") ;
-          buildah build --layers
-          --cache-from "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --cache-to "$REGISTRY/$OWNER/$IMAGE_NAME/cache"
-          --build-context cosign=./cosign/
-          --build-context
-          base=container-image://$REGISTRY/$OWNER/$IMAGE_NAME:latest
-          --build-arg "REGISTRY=$REGISTRY"
-          --build-arg "UNTAGGED_IMAGE=$REGISTRY/$OWNER/$IMAGE_NAME"
-          --secret=id=ostree-auth,src="$UPDATE_AUTHFILE"
-          --build-arg-file ./fedora-iot/argfile.conf
-          --target nvidia-legacy
-          -t "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy:latest"
-          -f Containerfile ./fedora-iot/
-      - run: >
-          buildah push --digestfile ./nvidia-legacy-digest
-          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy:latest"
-      - run: >
-          cosign login "$REGISTRY"
-          --username "$BOT_USER"
-          --password "$BOT_TOKEN"
-      - run: >
-          cosign sign --yes
-          --key env://COSIGN_PRIVATE_KEY
-          "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./digest)"
-      - run: >
-          cosign verify
-          --key cosign/cosign.pub
-          "$REGISTRY/$OWNER/$IMAGE_NAME@$(cat ./digest)"
-      - run: >
-          cosign sign --yes
-          --key env://COSIGN_PRIVATE_KEY
-          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia@$(cat ./nvidia-digest)"
-      - run: >
-          cosign verify
-          --key cosign/cosign.pub
-          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia@$(cat ./nvidia-digest)"
-      - run: >
-          cosign sign --yes
-          --key env://COSIGN_PRIVATE_KEY
-          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy@$(cat ./nvidia-digest)"
-      - run: >
-          cosign verify
-          --key cosign/cosign.pub
-          "$REGISTRY/$OWNER/${IMAGE_NAME}-nvidia-legacy@$(cat ./nvidia-digest)"
+    uses: ./.forgejo/workflows/bootc-build.yaml
+    secrets: inherit
+    with:
+      image: iot
+      context: fedora-iot
+      variants: nvidia nvidia-legacy

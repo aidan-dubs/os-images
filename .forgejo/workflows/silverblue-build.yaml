@@ -8,6 +8,8 @@ on:
     paths:
       - "fedora-silverblue/**"
       - "cosign/**"
+      - ".forgejo/workflows/silverblue-build.yaml"
+      - ".forgejo/workflows/bootc-build.yaml"
 jobs:
   build:
     uses: ./.forgejo/workflows/bootc-build.yaml
